@@ -1,0 +1,40 @@
+name: Deploy index.html to k3s (self-hosted)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "index.html"
+      - "k8s/**"
+      - ".github/workflows/**"
+
+concurrency:
+  group: deploy-eecs4413_auction
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted   
+    env:
+      KUBECONFIG: /home/pve1/.kube/config 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify kubectl
+        run: kubectl version --client=true
+
+      - name: Create/Update ConfigMap from index.html
+        run: |
+          kubectl create configmap hello-html \
+            --from-file=index.html \
+            -n default --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply Deployment/Service & Ingress
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Restart rollout
+        run: |
+          kubectl rollout restart deployment/hello
+          kubectl rollout status deployment/hello --timeout=180s
