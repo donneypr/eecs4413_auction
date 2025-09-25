@@ -36,5 +36,5 @@ jobs:
 
       - name: Restart rollout
         run: |
-          kubectl rollout restart deployment/hello
-          kubectl rollout status deployment/hello --timeout=180s
+          kubectl rollout restart deployment/auction-web
+          kubectl rollout status  deployment/auction-web --timeout=180s
