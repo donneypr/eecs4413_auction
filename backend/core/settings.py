@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",  # <-- add this
+    "auctions",
 ]
 
 # --- Middleware (corsheaders should be early) ---
