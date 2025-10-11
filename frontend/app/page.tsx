@@ -3,7 +3,7 @@ import { API_BASE } from "@/lib/api";
 type Item = { id:number; title:string; description:string; starting_price:string; created_at:string };
 
 export default async function Home() {
-  const res = await fetch(`${API_BASE}/api/items/`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/items/`, { cache: "no-store" });
   const items: Item[] = await res.json();
 
   return (
