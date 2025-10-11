@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auction-app-config
+  namespace: default
+data:
+  TZ: "America/Toronto"
+
+  # Django
+  DJANGO_DEBUG: "0"
+  DJANGO_ALLOWED_HOSTS: "donney.ddns.net"
+  DJANGO_CSRF_TRUSTED_ORIGINS: "https://donney.ddns.net"
+
+  # DB
+  MYSQL_DATABASE: "auctiondb"
+  MYSQL_USER: "auction"
+  MYSQL_HOST: "mysql"
+  MYSQL_PORT: "3306"
+
+  # Frontend:
+  # Browser requests should go to the same domain → ingress will route /api to backend
+  NEXT_PUBLIC_API_BASE: "/api"
+  # Server-side (SSR) fetches from Next.js container to Django inside cluster:
+  API_BASE_INTERNAL: "http://backend-svc:8000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auction-secrets
+  namespace: default
+type: Opaque
+stringData:
+  DJANGO_SECRET_KEY: "change-me"
+  MYSQL_PASSWORD: "auctionpass"
+  MYSQL_ROOT_PASSWORD: "supersecretroot"
