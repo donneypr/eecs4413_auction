@@ -5,8 +5,11 @@ metadata:
   namespace: default
 spec:
   clusterIP: None
-  selector: { app: mysql }
-  ports: [{ port: 3306, targetPort: 3306 }]
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -14,26 +17,60 @@ metadata:
   name: mysql
   namespace: default
 spec:
-  selector: { matchLabels: { app: mysql } }
   serviceName: mysql
   replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
   template:
-    metadata: { labels: { app: mysql } }
+    metadata:
+      labels:
+        app: mysql
     spec:
       containers:
-      - name: mysql
-        image: mysql:8.0
-        args: ["--default-authentication-plugin=mysql_native_password","--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
-        ports: [{ containerPort: 3306 }]
-        env:
-        - name: TZ                      ; valueFrom: {configMapKeyRef: {name: auction-app-config, key: TZ}}
-        - name: MYSQL_DATABASE          ; valueFrom: {configMapKeyRef: {name: auction-app-config, key: MYSQL_DATABASE}}
-        - name: MYSQL_USER              ; valueFrom: {configMapKeyRef: {name: auction-app-config, key: MYSQL_USER}}
-        - name: MYSQL_PASSWORD          ; valueFrom: {secretKeyRef: {name: auction-secrets, key: MYSQL_PASSWORD}}
-        - name: MYSQL_ROOT_PASSWORD     ; valueFrom: {secretKeyRef: {name: auction-secrets, key: MYSQL_ROOT_PASSWORD}}
-        volumeMounts: [{ name: data, mountPath: /var/lib/mysql }]
+        - name: mysql
+          image: mysql:8.0
+          args:
+            - "--default-authentication-plugin=mysql_native_password"
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+          ports:
+            - containerPort: 3306
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: TZ
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: MYSQL_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auction-secrets
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auction-secrets
+                  key: MYSQL_ROOT_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
   volumeClaimTemplates:
-  - metadata: { name: data }
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources: { requests: { storage: 10Gi } }
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+        # storageClassName: local-path   # uncomment to pin
