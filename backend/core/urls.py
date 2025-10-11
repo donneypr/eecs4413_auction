@@ -1,12 +1,12 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.http import JsonResponse
-from auctions.views import items_list
 
-def health(_): return JsonResponse({"ok": True})
+def health(_): 
+    return JsonResponse({"ok": True})
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health),
-    path("items/", items_list),          # <-- changed from "api/items/" to "items/"
+    path("", include("auctions.urls")),   # <-- routes /items/ here
 ]
