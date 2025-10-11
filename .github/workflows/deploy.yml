@@ -22,7 +22,9 @@ jobs:
 
       - name: Verify kubectl
         run: kubectl version --client=true
-
+      - name: Remove old/conflicting ingresses
+        run: |
+          kubectl delete ingress hello auction-web auction -n default --ignore-not-found
       # Apply all app manifests (Config/Secrets, DB, backend, frontend, ingress)
       - name: Apply Kubernetes manifests
         run: |
@@ -30,6 +32,7 @@ jobs:
           kubectl apply -f k3s/1-mysql.yaml || true   # ok to skip if you use external DB
           kubectl apply -f k3s/2-backend.yaml
           kubectl apply -f k3s/3-frontend.yaml
+          kubectl apply -f k3s/4a-mw-strip-api.yaml
           kubectl apply -f k3s/4-ingress.yaml
       - name: Run DB migrations
         run: |

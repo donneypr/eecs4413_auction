@@ -1,4 +1,4 @@
-# Frontend ingress (no rewrite)
+# Frontend (no rewrite)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -18,7 +18,7 @@ spec:
             port:
               number: 3000
 ---
-# Backend ingress for /api with strip-prefix middleware
+# Backend (/api) with strip-prefix middleware
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
