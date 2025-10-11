@@ -8,7 +8,7 @@ data:
 
   # Django
   DJANGO_DEBUG: "0"
-  DJANGO_ALLOWED_HOSTS: "donney.ddns.net"
+  DJANGO_ALLOWED_HOSTS: "donney.ddns.net,localhost,127.0.0.1,backend-svc,backend-svc.default.svc.cluster.local,*"
   DJANGO_CSRF_TRUSTED_ORIGINS: "https://donney.ddns.net"
 
   # DB

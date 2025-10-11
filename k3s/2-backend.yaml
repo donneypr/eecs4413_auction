@@ -83,6 +83,9 @@ spec:
             httpGet:
               path: /health/
               port: 8000
+              httpHeaders:
+                - name: Host
+                  value: donney.ddns.net
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
