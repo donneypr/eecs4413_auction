@@ -1,11 +1,10 @@
 name: Deploy to k3s (self-hosted)
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "k3s/**"
-      - ".github/workflows/deploy-k3s.yml"
+  workflow_run:
+    workflows: ["Build & Push Images"]  # must match the *name:* of your build workflow
+    types: [completed]
+    branches: [main]
   workflow_dispatch: {}
 
 concurrency:
@@ -14,11 +13,16 @@ concurrency:
 
 jobs:
   deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: self-hosted
     env:
       KUBECONFIG: /home/pve1/.kube/config
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Verify kubectl
         run: kubectl version --client=true
@@ -39,10 +43,18 @@ jobs:
           kubectl delete job backend-migrate -n default --ignore-not-found
           kubectl apply -f k3s/5-migrate.yaml
           kubectl wait --for=condition=complete job/backend-migrate -n default --timeout=180s
+      - name: Set backend image to this commit SHA and roll out
+        env:
+          REPO_LC: ${{ github.event.repository.name }}
+        run: |
+          HEAD_SHA='${{ github.event.workflow_run.head_sha }}'
+          SHORT_SHA=${HEAD_SHA::7}
+          IMAGE="ghcr.io/${{ github.repository_owner }}/$(echo "$REPO_LC" | tr '[:upper:]' '[:lower:]')-backend:sha-${SHORT_SHA}"
+          echo "Deploying $IMAGE"
+          kubectl set image deploy/auction-backend backend=$IMAGE -n default
+          kubectl rollout status deploy/auction-backend -n default --timeout=180s
       # Since images are tagged ":latest", restart to pull the newest
       - name: Restart rollouts
         run: |
-          kubectl rollout restart deployment/auction-backend
           kubectl rollout restart deployment/auction-frontend
-          kubectl rollout status  deployment/auction-backend --timeout=180s
           kubectl rollout status  deployment/auction-frontend --timeout=180s
