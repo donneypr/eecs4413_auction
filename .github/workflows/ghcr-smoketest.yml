@@ -1,0 +1,37 @@
+name: GHCR Smoketest
+on:
+  workflow_dispatch: {}         # run manually from Actions tab
+permissions:
+  contents: read
+  packages: write               # allow pushing packages
+env:
+  REGISTRY: ghcr.io
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lowercase repo name
+        id: names
+        run: |
+          REPO_LC=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "img=${{ env.REGISTRY }}/${{ github.repository_owner }}/$REPO_LC-smoketest" >> $GITHUB_OUTPUT
+          echo "tag=sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build a tiny image on the fly, no repo files needed
+      - name: Build & push
+        run: |
+          cat > Dockerfile <<'EOF'
+          FROM busybox
+          CMD ["echo","hello-from-ghcr"]
+          EOF
+          docker build -t "${{ steps.names.outputs.img }}:${{ steps.names.outputs.tag }}" .
+          docker tag "${{ steps.names.outputs.img }}:${{ steps.names.outputs.tag }}" "${{ steps.names.outputs.img }}:latest"
+          docker push "${{ steps.names.outputs.img }}:${{ steps.names.outputs.tag }}"
+          docker push "${{ steps.names.outputs.img }}:latest"
