@@ -19,23 +19,23 @@ spec:
               number: 3000
 ---
 # # Backend (/api) with strip-prefix middleware
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: auction-backend
-#   namespace: default
-#   annotations:
-#     traefik.ingress.kubernetes.io/router.middlewares: default-strip-api@kubernetescrd
-# spec:
-#   ingressClassName: traefik
-#   rules:
-#   - host: donney.ddns.net
-#     http:
-#       paths:
-#       - path: /api
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: backend-svc
-#             port:
-#               number: 8000
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auction-backend
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: default-strip-api@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: donney.ddns.net
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-svc
+            port:
+              number: 8000
