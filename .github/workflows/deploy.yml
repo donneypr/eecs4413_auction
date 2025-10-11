@@ -1,12 +1,12 @@
-name: Deploy index.html to k3s (self-hosted)
+name: Deploy to k3s (self-hosted)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - "index.html"
       - "k3s/**"
-      - ".github/workflows/**"
+      - ".github/workflows/deploy-k3s.yml"
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-eecs4413_auction
@@ -14,27 +14,32 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: self-hosted   
+    runs-on: self-hosted
     env:
-      KUBECONFIG: /home/pve1/.kube/config 
+      KUBECONFIG: /home/pve1/.kube/config
     steps:
       - uses: actions/checkout@v4
 
       - name: Verify kubectl
         run: kubectl version --client=true
 
-      - name: Create/Update ConfigMap from index.html
+      # Apply all app manifests (Config/Secrets, DB, backend, frontend, ingress)
+      - name: Apply Kubernetes manifests
         run: |
-          kubectl create configmap hello-html \
-            --from-file=index.html \
-            -n default --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Apply Deployment/Service & Ingress
+          kubectl apply -f k3s/0-config.yaml
+          kubectl apply -f k3s/1-mysql.yaml || true   # ok to skip if you use external DB
+          kubectl apply -f k3s/2-backend.yaml
+          kubectl apply -f k3s/3-frontend.yaml
+          kubectl apply -f k3s/4-ingress.yaml
+      - name: Run DB migrations
         run: |
-          kubectl apply -f k3s/deployment.yaml
-          kubectl apply -f k3s/ingress.yaml
-
-      - name: Restart rollout
+          kubectl delete job backend-migrate -n default --ignore-not-found
+          kubectl apply -f k3s/5-migrate.yaml
+          kubectl wait --for=condition=complete job/backend-migrate -n default --timeout=180s
+      # Since images are tagged ":latest", restart to pull the newest
+      - name: Restart rollouts
         run: |
-          kubectl rollout restart deployment/auction-web
-          kubectl rollout status  deployment/auction-web --timeout=180s
+          kubectl rollout restart deployment/auction-backend
+          kubectl rollout restart deployment/auction-frontend
+          kubectl rollout status  deployment/auction-backend --timeout=180s
+          kubectl rollout status  deployment/auction-frontend --timeout=180s
