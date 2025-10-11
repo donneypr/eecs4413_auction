@@ -1,0 +1,63 @@
+name: Build & Push Images
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "backend/Dockerfile"
+      - "frontend/Dockerfile"
+      - ".github/workflows/build-and-push.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write   # lets GITHUB_TOKEN push to GHCR
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')-backend
+  IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')-frontend
+  TAG_SHA: sha-${{ github.sha }}
+  TAG_LATEST: latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image names
+        id: names
+        run: |
+          REPO_LC=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "backend=${{ env.REGISTRY }}/${{ github.repository_owner }}/$REPO_LC-backend" >> $GITHUB_OUTPUT
+          echo "frontend=${{ env.REGISTRY }}/${{ github.repository_owner }}/$REPO_LC-frontend" >> $GITHUB_OUTPUT
+          echo "tag_latest=latest" >> $GITHUB_OUTPUT
+          echo "tag_sha=sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ steps.names.outputs.backend }}:${{ steps.names.outputs.tag_latest }}
+            ${{ steps.names.outputs.backend }}:${{ steps.names.outputs.tag_sha }}
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ steps.names.outputs.frontend }}:${{ steps.names.outputs.tag_latest }}
+            ${{ steps.names.outputs.frontend }}:${{ steps.names.outputs.tag_sha }}
