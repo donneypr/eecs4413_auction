@@ -27,6 +27,17 @@ INSTALLED_APPS = [
     "rest_framework",
 ]
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",  # dev
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",  # dev; later IsAuthenticatedOrReadOnly
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
+
 # --- Middleware (corsheaders should be early) ---
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # <-- add this near top

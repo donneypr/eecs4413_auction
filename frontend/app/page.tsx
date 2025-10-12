@@ -1,10 +1,14 @@
 import { API_BASE } from "@/lib/api";
 
 type Item = { id:number; title:string; description:string; starting_price:string; created_at:string };
+type ItemsResponse = Item[] | { results?: Item[] };
 
 export default async function Home() {
   const res = await fetch(`${API_BASE}/items/`, { cache: "no-store" });
-  const items: Item[] = await res.json();
+  if (!res.ok) throw new Error(`API ${res.status}`);
+
+  const data: ItemsResponse = await res.json();
+  const items: Item[] = Array.isArray(data) ? data : (data.results ?? []);
 
   return (
     <main style={{ padding: 24 }}>

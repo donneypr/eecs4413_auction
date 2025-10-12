@@ -1,8 +1,12 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.http import JsonResponse
+from rest_framework import viewsets, permissions, serializers
 from .models import Item
 
-def items_list(_request):
-    return JsonResponse([i.as_dict() for i in Item.objects.all()], safe=False)
+class ItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Item
+        fields = ["id", "title", "description", "starting_price", "created_at"]
+
+class ItemViewSet(viewsets.ModelViewSet):
+    queryset = Item.objects.order_by("-created_at")
+    serializer_class = ItemSerializer
+    permission_classes = [permissions.AllowAny]  # dev: open; later tighten
