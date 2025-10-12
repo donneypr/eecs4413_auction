@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",  # <-- add this
     "auctions",
+    "rest_framework",
 ]
 
 # --- Middleware (corsheaders should be early) ---
