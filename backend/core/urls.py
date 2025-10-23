@@ -8,5 +8,6 @@ def health(_):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health),
+    path("", include("accounts.urls")),
     path("", include("auctions.urls")),   # <-- routes /items/ here
 ]
