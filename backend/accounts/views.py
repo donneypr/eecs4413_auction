@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import SignupSerializer, UserSerializer
 from .models import UserProfile
+import os
+from urllib.parse import urlencode
 
 User = get_user_model()
 
@@ -69,20 +71,33 @@ def me(request):
     return Response({"authenticated": True, "user": UserSerializer(request.user).data})
 
 # ---------- Forgot Password ----------
+def build_reset_url(request, uid, token):
+    base = os.environ.get("FRONTEND_BASE_URL")  # e.g. https://donney.ddns.net
+    q = urlencode({"uid": uid, "token": token})
+    if base:
+        return f"{base.rstrip('/')}/reset-password?{q}"
+    # fallback: honors X-Forwarded-Proto and host correctly
+    return request.build_absolute_uri(f"/reset-password?{q}")
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def password_reset(request):
-    email_or_username = (request.data.get("email") or request.data.get("username") or "").strip()
+    email = (request.data.get("email") or "").strip()
+    username = (request.data.get("username") or "").strip()
     try:
-        user = User.objects.get(email=email_or_username) if "@" in email_or_username \
-               else User.objects.get(username=email_or_username)
+        if email:
+            user = User.objects.get(email__iexact=email)
+        elif username:
+            user = User.objects.get(username__iexact=username)
+        else:
+            return Response({"detail": "email or username required"}, status=400)
     except User.DoesNotExist:
         # Don't leak which emails exist
         return Response({"ok": True})
 
     uid   = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
-    reset_url = f"{request.scheme}://{request.get_host()}/reset-password?uid={uid}&token={token}"
+    reset_url = build_reset_url(request, uid, token)   # use the helper
 
     # In dev we "send" via console email backend; also return link for convenience
     # In prod you'd send an email and NOT return the link

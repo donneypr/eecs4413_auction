@@ -25,6 +25,11 @@ spec:
                 configMapKeyRef:
                   name: auction-app-config
                   key: TZ
+            - name: FRONTEND_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: FRONTEND_BASE_URL
             - name: DJANGO_DEBUG
               valueFrom:
                 configMapKeyRef:
