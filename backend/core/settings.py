@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "corsheaders",  # <-- add this
     "auctions",
     "rest_framework",
+    "accounts",
 ]
 
 REST_FRAMEWORK = {
@@ -32,11 +33,16 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",  # dev
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",  # dev; later IsAuthenticatedOrReadOnly
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",  # dev; later IsAuthenticatedOrReadOnly
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
+
+# Dev email for password reset (prints emails to console)
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    DEFAULT_FROM_EMAIL = "noreply@example.com"
 
 # --- Middleware (corsheaders should be early) ---
 MIDDLEWARE = [
