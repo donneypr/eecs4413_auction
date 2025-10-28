@@ -12,7 +12,7 @@ export default async function Home() {
 
   return (
     <main style={{ padding: 24 }}>
-      <h1>Auction Frontend</h1>
+      <h1>kickBay Frontend</h1>
       <p>API status: {res.ok ? "OK" : "DOWN"}</p>
       <h2>Items</h2>
       <ul>
