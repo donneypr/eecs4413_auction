@@ -69,3 +69,70 @@ curl -X POST "http://localhost:8000/auth/logout/" \
 - to confirm you are logged out:
 curl -X GET "http://localhost:8000/auth/me/" -b cookies.txt
 (should return authenticated:false)
+
+# to test out UC3, bidding on items and auction ending
+
+- Get CSRF Token:
+curl -X GET "http://localhost:8000/auth/csrf/" -c cookies.txt
+
+- Login to test account for testing:
+curl -X POST "http://localhost:8000/auth/login/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $(grep csrftoken cookies.txt | awk '{print $7}')" \
+  -b cookies.txt \
+  -c cookies.txt \
+  -d '{
+    "username": "testuser",
+    "password": "SecurePass123!"
+  }'
+
+- Get item details before bidding: (item id set to 4 in this example)
+curl -X GET "http://localhost:8000/items/4/" -b cookies.txt
+(note the current_price and minimum_bid values for next steps)
+
+- Place a valid bid on the item: (bid_amount must be at least 5% higher than current_price for FORWARD auctions)
+curl -X POST "http://localhost:8000/items/1/bid/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $(grep csrftoken cookies.txt | awk '{print $7}')" \
+  -b cookies.txt \
+  -d '{
+    "bid_amount": 530.00
+  }'
+(should return 200 OK with success message and updated item details showing new current_price and current_bidder_username)
+
+- Test failed bid (too low): (bid_amount below minimum_bid requirement)
+curl -X POST "http://localhost:8000/items/1/bid/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $(grep csrftoken cookies.txt | awk '{print $7}')" \
+  -b cookies.txt \
+  -d '{
+    "bid_amount": 540.00
+  }'
+(should return 400 BAD REQUEST with error message showing minimum_bid required)
+
+- Get current price (for auto-updating frontend):
+curl -X GET "http://localhost:8000/items/1/current-price/" -b cookies.txt
+(returns current_price, current_bidder, is_active, and minimum_bid without full item details - useful for polling)
+
+- Check auction status:
+curl -X GET "http://localhost:8000/items/1/status/" -b cookies.txt
+(returns is_active, auction_type, end_time, status (active or ended), and winner_info if auction has ended)
+
+- Test seller cannot bid: (if testuser is the seller of an item they own, try to place a bid)
+curl -X POST "http://localhost:8000/items/<id>/bid/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $(grep csrftoken cookies.txt | awk '{print $7}')" \
+  -b cookies.txt \
+  -d '{
+    "bid_amount": 600.00
+  }'
+(should return 403 FORBIDDEN with error message: "You cannot bid on your own item")
+
+- Log out after done testing:
+curl -X POST "http://localhost:8000/auth/logout/" \
+  -H "X-CSRFToken: $(grep csrftoken cookies.txt | awk '{print $7}')" \
+  -b cookies.txt
+
+- To confirm you are logged out:
+curl -X GET "http://localhost:8000/auth/me/" -b cookies.txt
+(should return authenticated:false)
