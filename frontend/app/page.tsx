@@ -4,7 +4,7 @@ type Item = { id:number; title:string; description:string; starting_price:string
 type ItemsResponse = Item[] | { results?: Item[] };
 
 export default async function Home() {
-  const res = await fetch(`${API_BASE}/items/`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/items/search/`, { cache: "no-store" });
   if (!res.ok) throw new Error(`API ${res.status}`);
 
   const data: ItemsResponse = await res.json();
