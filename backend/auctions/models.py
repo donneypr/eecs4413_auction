@@ -45,6 +45,19 @@ class AuctionItem(models.Model):
 
     last_price_update = models.DateTimeField(null=True, blank=True)  # Track the last auto-decrease
     
+    standard_shipping_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=15.00,
+        help_text="Standard shipping cost"
+    )
+    expedited_shipping_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=20.00,
+        help_text="Additional cost for expedited shipping cost"
+    )
+
     def __str__(self):
         return self.name
     
