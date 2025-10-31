@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "auctions",
     "rest_framework",
     "accounts",
+    "payments",
 ]
 
 REST_FRAMEWORK = {

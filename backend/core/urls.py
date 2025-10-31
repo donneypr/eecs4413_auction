@@ -10,4 +10,5 @@ urlpatterns = [
     path("health/", health),
     path("", include("accounts.urls")), # <-- routes accounts/
     path("", include("auctions.urls")), # <-- routes auctions/ 
+    path('payments/', include('payments.urls')), # routes payments/
 ]
