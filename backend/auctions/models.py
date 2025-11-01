@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class AuctionItem(models.Model):
-    AUCTION_TYPES = [ # types of auctions we will have, google definitions if don't know
+    AUCTION_TYPES = [
         ('FORWARD', 'Forward'),
         ('DUTCH', 'Dutch'),
     ]
@@ -17,6 +18,25 @@ class AuctionItem(models.Model):
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='items_selling')
     created_at = models.DateTimeField(auto_now_add=True)
     
+    def has_ended(self):
+        return timezone.now() >= self.end_time
+
+    def end_auction_if_needed(self):
+        """Mark auction as ended and determine winner if time expired."""
+        if self.is_active and self.has_ended():
+            highest_bid = self.bids.order_by('-amount').first()
+            if highest_bid:
+                self.winner = highest_bid.bidder
+                self.current_price = highest_bid.amount
+            self.is_active = False
+            self.save()
+
+class Bid(models.Model):
+    item = models.ForeignKey(AuctionItem, on_delete=models.CASCADE, related_name='bids')
+    bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bids')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return self.name
+        return f"{self.bidder.username} - {self.item.name} (${self.amount})"
     

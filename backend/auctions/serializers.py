@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AuctionItem
+from .models import AuctionItem, Bid
 from django.utils import timezone
 
 class AuctionItemSerializer(serializers.ModelSerializer):
@@ -19,14 +19,45 @@ class AuctionItemSerializer(serializers.ModelSerializer):
         
 # for adding auction items from backend
 class CreateAuctionItemSerializer(serializers.ModelSerializer):
+    seller = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = AuctionItem
         fields = ['name', 'description', 'starting_price', 'current_price', 
-                  'auction_type', 'end_time']
+                  'auction_type', 'end_time', 'seller']
     
     ## removed! the views.py handles the seller assignment when theres no auth seller --> to test curl commands
     # def create(self, validated_data):
     #     #set seller to the auth user so users can't create items under other user names by sending "seller": <another_user_id> in a JSON
     #     validated_data['seller'] = self.context['request'].user
     #     return super().create(validated_data) 
-    
+
+class BidSerializer(serializers.ModelSerializer):
+    bidder = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Bid
+        fields = ['id', 'bidder', 'amount', 'timestamp']
+
+class AuctionEndedSerializer(serializers.ModelSerializer):
+    winner = serializers.StringRelatedField(read_only=True)
+    bids = BidSerializer(many=True, read_only=True)
+    total_payable = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuctionItem
+        fields = [
+            'id',
+            'name',
+            'description',
+            'current_price',
+            'winner',
+            'shipping_cost',
+            'expedited_shipping_cost',
+            'total_payable',
+            'is_active',
+            'bids'
+        ]
+
+    def get_total_payable(self, obj):
+        """Return default (non-expedited) total."""
+        return float(obj.current_price + obj.shipping_cost)

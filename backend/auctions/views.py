@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import AuctionItem
+from .models import AuctionItem, Bid
 from .serializers import AuctionItemSerializer, CreateAuctionItemSerializer
 from django.db.models import Q
 
@@ -78,3 +78,72 @@ def get_item_details(request, item_id):
             {"error": "Item not found or inactive"}, 
             status=status.HTTP_404_NOT_FOUND
         )
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def auction_ended_view(request, pk):
+    """
+    UC4: Handle auction ended state.
+    - Marks the auction as ended if expired.
+    - Returns winner info.
+    - Only winner can proceed to payment.
+    """
+    try:
+        item = AuctionItem.objects.get(pk=pk)
+    except AuctionItem.DoesNotExist:
+        return Response({'error': 'Auction item not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Ensure auction status is up to date
+    item.end_auction_if_needed()
+
+    if item.is_active:
+        return Response({'message': 'Auction still ongoing.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    highest_bid = item.bids.order_by('-amount').first()
+
+    if not highest_bid:
+        return Response({
+            'status': 'no_bids',
+            'message': 'Auction ended with no bids.'
+        }, status=status.HTTP_200_OK)
+
+    if request.user == highest_bid.bidder:
+        serializer = AuctionEndedSerializer(item)
+        return Response({
+            'status': 'won',
+            'message': 'Congratulations! You won the auction.',
+            'data': serializer.data
+        })
+    else:
+        return Response({
+            'status': 'lost',
+            'message': 'The auction has ended. You did not win this item.'
+        }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def pay_now_view(request, pk):
+    """
+    UC4: 'Pay Now' action for the winner.
+    """
+    try:
+        item = AuctionItem.objects.get(pk=pk)
+    except AuctionItem.DoesNotExist:
+        return Response({'error': 'Auction item not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if item.is_active:
+        return Response({'error': 'Auction still active. Payment unavailable.'}, status=400)
+
+    if request.user != item.winner:
+        return Response({'error': 'You are not the winner of this auction.'}, status=403)
+
+    expedited = request.data.get('expedited', False)
+    total = item.current_price + item.shipping_cost
+    if expedited:
+        total += item.expedited_shipping_cost
+
+    return Response({
+        'message': 'Payment ready.',
+        'expedited': expedited,
+        'total_amount': float(total),
+    })
