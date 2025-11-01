@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   backoffLimit: 1
-  activeDeadlineSeconds: 300
-  ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 1200
+  ttlSecondsAfterFinished: 900
   template:
     spec:
       restartPolicy: Never
@@ -69,11 +69,10 @@ spec:
           args:
             - >
               set -e;
-              echo "Running migrations (with --fake-initial)…";
-              for i in $(seq 1 60); do
+              echo "Running migrations (--fake-initial, with retries)…";
+              for i in $(seq 1 120); do
                 python manage.py migrate --noinput --fake-initial && exit 0;
-                echo "DB not ready or migration failed, retry $i/60…";
-                sleep 5;
+                echo "Retry $i/120…"; sleep 5;
               done;
               echo "Migrate failed after retries"; exit 1
             # - |
