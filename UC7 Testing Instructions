@@ -1,0 +1,53 @@
+1. Open Postman and create a collection. Name it "EECS 4413 Auction UC7".
+
+2. Make a new request and name it "CSRF Token".
+
+3. Change the method to "GET" and type: "http://localhost:8000/auth/csrf/" onto the URL bar.
+
+4. Click Send. You should receive a 200 OK on the console.
+
+5. Click on Cookies, then click "csrftoken". Copy and paste the value of "csrftoken".
+
+NOTE: At any point, the system will say that the CSRF Token has expired. Just redo Step 5 for any request.
+
+6. Make a new request and name it "Sign-Up".
+
+7. Change the method to "POST" and type: "http://localhost:8000/auth/signup/ onto the URL bar.
+
+8. Go to the Headers tab.
+
+9. Make two key-value pairs: The first one "Content-Type" with "aaplication/json", the second one "X-CSRFToken" with your pasted token under the Value column.
+
+10. Go to the Body tab.
+
+11. Put "raw" under the first drop down menu and "JSON" in the second.
+
+12. In the JSON body, make an account with username, email, password, password2, first_name, last_name, street_name, street_number, city, country, postal_code.
+
+13. Click Send. You should have received 201 Created.
+
+14. Make a new request and name it "Create New Item".
+
+15. Change the method to "POST" and type: "http://localhost:8000/items/create/" onto the URL bar.
+
+16. Repeat Step 8-11.
+
+17. In the JSON body, make an item with name, description, current_price, starting_price, auction_type: "FORWARD", end_time: "2025-12-31T23:59:00Z"
+
+18. Click Send. You should received 201 Created along with the information you created for the item in addition to the seller. This should create an item with index 1.
+
+19. Make a new request and name it "Auction Ended Item 1".
+
+20. Change the method to "GET" and type: "http://localhost:8000/1/ended/" onto the URL bar.
+
+21. Repeat Step 8-11.
+
+22. In the JSON body, type in the username and password when you made your account.
+
+23. Click Send. You should have received a 400 Bad Request with the message: "Auction still ongoing".
+
+24. If you want to create an item that has its auction ended, repeat step 14-18, but at step 17, replace the end_time with "2024-12-31T23:59:00Z". This is a date that has past.
+
+25. If you want to see the item you created in the previous that has its auction ended, repeat step 19-22, but at step 20, type: "http://localhost:8000/2/ended/" onto the URL bar. This is your second item created.
+
+26. Click Send. You should have received a 200 OK with '"status": "no_bids", "message": "Auction ended with no bids."'.
