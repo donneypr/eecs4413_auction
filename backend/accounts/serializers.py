@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.Serializer):
     username      = serializers.CharField(max_length=150)
     password      = serializers.CharField(write_only=True, min_length=8)
-    email         = serializers.EmailField(required=False, allow_blank=True)
+    email         = serializers.EmailField(required=True)
     first_name    = serializers.CharField(max_length=150)
     last_name     = serializers.CharField(max_length=150)
     street_name   = serializers.CharField(max_length=255)
@@ -30,11 +30,17 @@ class SignupSerializer(serializers.Serializer):
             raise serializers.ValidationError("Username already taken")
         return v
 
+    def validate_email(self, v):
+        v_norm = v.strip().lower()
+        if User.objects.filter(email__iexact=v_norm).exists():
+           raise serializers.ValidationError("Email already in use")
+        return v_norm
+
     def create(self, data):
         user = User.objects.create_user(
             username   = data["username"],
             password   = data["password"],
-            email      = data.get("email",""),
+            email      = data["email"],
             first_name = data["first_name"],
             last_name  = data["last_name"],
         )

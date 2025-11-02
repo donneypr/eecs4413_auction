@@ -42,11 +42,29 @@ except Exception:
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
-    username = request.data.get("username","").strip()
+    # Accept identifier as either username or email; keep backward-compatible keys
+    identifier = (
+        request.data.get("identifier")
+        or request.data.get("username")
+        or request.data.get("email")
+        or ""
+    ).strip()
     password = request.data.get("password","")
     otp_code = request.data.get("otp")  # optional
 
-    user = authenticate(request, username=username, password=password)
+    # Resolve identifier to username if email was supplied
+    username_for_auth = identifier
+    if "@" in identifier:
+        try:
+            user_obj = User.objects.get(email__iexact=identifier)
+            username_for_auth = user_obj.username
+        except User.DoesNotExist:
+            return Response({"detail":"invalid credentials"}, status=401)
+        except User.MultipleObjectsReturned:
+            # Defensive: if legacy duplicates exist, require username
+            return Response({"detail":"multiple accounts use this email; use username"}, status=400)
+
+    user = authenticate(request, username=username_for_auth, password=password)
     if not user:
         return Response({"detail":"invalid credentials"}, status=401)
 

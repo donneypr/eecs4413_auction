@@ -40,7 +40,7 @@ def search_items(request):
 
 # create items
 @api_view(['POST'])
-@permission_classes([AllowAny]) # could set this to IsAuthenticated so only authenticated users can create items
+@permission_classes([IsAuthenticated]) # could set this to IsAuthenticated so only authenticated users can create items
 def create_item(request):
     """
     Create Item (UC 2)
