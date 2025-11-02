@@ -8,6 +8,55 @@ from django.db.models import Q
 from django.utils import timezone
 from decimal import Decimal
 
+# display auctions with filtering and sorting
+@api_view(['GET'])
+@permission_classes([AllowAny])  # or IsAuthenticated if you want it gated
+def list_items(request):
+    qs = AuctionItem.objects.select_related('seller', 'current_bidder').all()
+
+    # Optional filters (apply only if provided)
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(description__icontains=q))
+
+    status_param = (request.GET.get('status') or '').lower()  # 'active' | 'ended'
+    now = timezone.now()
+    if status_param == 'active':
+        qs = qs.filter(is_active=True, end_time__gt=now)
+    elif status_param == 'ended':
+        qs = qs.filter(Q(is_active=False) | Q(end_time__lte=now))
+
+    auction_type = (request.GET.get('type') or '').upper()  # 'FORWARD' | 'DUTCH'
+    if auction_type in ('FORWARD', 'DUTCH'):
+        qs = qs.filter(auction_type=auction_type)
+
+    # Optional sort
+    sort = request.GET.get('sort')  # 'ending_soon' | 'newest' | 'price_asc' | 'price_desc'
+    sort_map = {
+        'ending_soon': 'end_time',
+        'newest': '-created_at',
+        'price_asc': 'current_price',
+        'price_desc': '-current_price',
+    }
+    qs = qs.order_by(sort_map.get(sort, '-end_time'))
+
+    # Pagination (safe defaults)
+    try:
+        page = max(int(request.GET.get('page', 1)), 1)
+    except ValueError:
+        page = 1
+    try:
+        page_size = min(max(int(request.GET.get('page_size', 20)), 1), 100)
+    except ValueError:
+        page_size = 20
+
+    total = qs.count()
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    data = AuctionItemSerializer(qs[start:end], many=True).data
+    return Response({'count': total, 'page': page, 'page_size': page_size, 'results': data})
+
 # search items
 @api_view(['GET'])
 @permission_classes([IsAuthenticated]) # only authenticated (logged-in) users can search for items

@@ -121,12 +121,12 @@ curl -s "$BASE/auth/csrf/" -b "$JAR" -c "$JAR" > /dev/null
 CSRF=$(awk '/csrftoken/ {print $7}' "$JAR")
 curl -i "$BASE/auth/me/" -b "$JAR"
 
-macOS (BSD date) – ends in 5 minutes:
+# create the item
+macOS (BSD date) – ends in 10 minutes:
 
-END_AT=$(date -u -v+5M +"%Y-%m-%dT%H:%M:%SZ")
+END_AT=$(date -u -v+10M +"%Y-%m-%dT%H:%M:%SZ")
 echo "END_AT=$END_AT"
 
-# create the item
 curl -i -X POST "$BASE/items/create/" \
   -H "Content-Type: application/json" \
   -H "X-CSRFToken: $CSRF" \
@@ -134,15 +134,18 @@ curl -i -X POST "$BASE/items/create/" \
   -d "{
         \"name\":\"Test Forward Auction Item\",
         \"description\":\"Great condition\",
-        \"current_price\":\"10.00\",
+        \"starting\":\"10.00\",
         \"auction_type\":\"FORWARD\",
         \"end_time\":\"$END_AT\",
         \"standard_shipping_cost\":\"15.00\",
         \"expedited_shipping_cost\":\"20.00\"
       }"
 
+# search active auctions
+curl -s "$BASE/items/search/?keyword=Test" -b "$JAR"
+
 # get item id
-ITEM_ID=$(curl -s "$BASE/items/search/?q=Test%20Forward%20Auction%20Item" -b "$JAR" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)
+ITEM_ID=$(curl -s "$BASE/items/search/?keyword=Test%20Forward%20Auction%20Item" -b "$JAR" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)
 echo "ITEM_ID=$ITEM_ID"
 
 # GET ITEM DETAIL
