@@ -75,7 +75,10 @@ class CreateAuctionItemSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'starting_price', 'current_price', 
                   'auction_type', 'end_time', 'dutch_decrease_percentage',
                   'dutch_decrease_interval']
-        
+        # make current_price optional on input
+        extra_kwargs = {
+            'current_price': {'read_only': True},
+        }
     def validate(self, data):
         # if DUTCH auction, require the price decrease fields
         if data.get('auction_type') == 'DUTCH':
@@ -83,7 +86,17 @@ class CreateAuctionItemSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Dutch auctions require a decrease percentage and a time interval for the decreasing"
                 )
+         # ensure provided current_price isn't less than starting_price
+        sp = data.get('starting_price')
+        cp = data.get('current_price')
+        if sp is not None and cp is not None and cp < sp:
+            raise serializers.ValidationError({"current_price": "Must be ≥ starting_price"})
         return data
+    
+    def create(self, validated_data):
+        # Always start the auction at starting_price
+        validated_data['current_price'] = validated_data['starting_price']
+        return super().create(validated_data)
     
 class PlaceBidSerializer(serializers.Serializer):
     """Serializer for bid placing"""
