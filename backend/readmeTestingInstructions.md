@@ -114,6 +114,8 @@ curl -i -X POST "$BASE/auth/logout/" \
 
 # TEST SEARCH ITEM, CREATE ITEM, GET ITEM DETAILS, PLACE BID, GET CURRENT PRICE, GET AUCTION STATUS
 
+** IF YOU WANT TO PLACE A BID YOU HAVE TO MAKE ANOTHER ACCOUNT. FOLLOW PREVIOUS STEPS TO SIGN UP AND LOG IN THEN GET ITEM ID AND PLACE BID (SEE BELOW) **
+
 # CREATE ITEM
 
 # refresh csrf after log in
@@ -132,20 +134,28 @@ curl -i -X POST "$BASE/items/create/" \
   -H "X-CSRFToken: $CSRF" \
   -b "$JAR" -c "$JAR" \
   -d "{
-        \"name\":\"Test Forward Auction Item\",
+        \"name\":\"Test Item3\",
         \"description\":\"Great condition\",
-        \"starting\":\"10.00\",
+        \"starting_price\":\"10.00\",
         \"auction_type\":\"FORWARD\",
         \"end_time\":\"$END_AT\",
         \"standard_shipping_cost\":\"15.00\",
         \"expedited_shipping_cost\":\"20.00\"
       }"
 
-# search active auctions
+# Display all items
+curl -s "$BASE/items/"
+
+# Display all items with filters
+curl -s "$BASE/items/?status=active"
+curl -s "$BASE/items/?type=FORWARD&sort=ending_soon"
+curl -s "$BASE/items/?q=shoe&page=2&page_size=10"
+
+# search active auctions by keyword
 curl -s "$BASE/items/search/?keyword=Test" -b "$JAR"
 
 # get item id
-ITEM_ID=$(curl -s "$BASE/items/search/?keyword=Test%20Forward%20Auction%20Item" -b "$JAR" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)
+ITEM_ID=$(curl -s "$BASE/items/search/?keyword=Test%20Item3" -b "$JAR" | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)
 echo "ITEM_ID=$ITEM_ID"
 
 # GET ITEM DETAIL
@@ -163,3 +173,23 @@ curl -i -X POST "$BASE/items/$ITEM_ID/bid/" \
 
 # GET AUCTION STATUS
 curl -i "$BASE/items/$ITEM_ID/status/" -b "$JAR"
+
+# PAYMENTS
+
+# get won items
+curl -i "$BASE/payments/my-won-items/" -b "$JAR"
+
+set ITEM_ID to id of item that you bid on and won (can find in output of above command)
+
+# get payment details
+curl -i "$BASE/payments/$ITEM_ID/details/" -b "$JAR"
+
+# process payment
+CSRF=$(awk '/csrftoken/ {print $7}' "$JAR" | tail -1)
+
+curl -i -X POST "$BASE/$ITEM_ID/pay/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $CSRF" \
+  --cookie "csrftoken=$CSRF" \
+  -b "$JAR" -c "$JAR" \
+  -d '{"expedited_shipping":false,"payment_method":"Credit Card", "card_number":1234567891234567,"name_on_card":"testuser2","expiration_date":"02/26","security_code":321}'

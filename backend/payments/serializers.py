@@ -54,22 +54,22 @@ class ProcessPaymentSerializer(serializers.Serializer):
     # Card info fields (won't be saved to DB)
     card_number = serializers.CharField(
         max_length=19,
-        required=True,
+        required=True, write_only=True,
         help_text="16-digit card number"
     )
     name_on_card = serializers.CharField(
         max_length=100,
-        required=True,
+        required=True, write_only=True,
         help_text="Cardholder name"
     )
     expiration_date = serializers.CharField(
         max_length=5,
-        required=True,
+        required=True, write_only=True,
         help_text='MM/YY format'
     )
     security_code = serializers.CharField(
         max_length = 4,
-        required=True,
+        required=True, write_only=True,
         help_text="3 or 4 digit security code"
     )
 
