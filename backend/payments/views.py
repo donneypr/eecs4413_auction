@@ -100,7 +100,11 @@ def process_payment(request, item_id):
     POST /payments/<item_id>/pay/
     Body: {
         "expedited_shipping": true/false,
-        "payment_method": "Credit Card" (optional)
+        "payment_method": "Credit Card",
+        "card_number": "4532015112830366",
+        "name_on_card": "Franky Nakama",
+        "expiration_date": "12/27",
+        "security_code": "647"
     }
     """
     try:
@@ -153,6 +157,13 @@ def process_payment(request, item_id):
         
         expedited_shipping = serializer.validated_data['expedited_shipping']
         payment_method = serializer.validated_data.get('payment_method', 'Credit Card')
+        # the following is validated but not stored
+        card_number = serializer.validated_data[card_number]
+        name_on_card = serializer.validated_data[name_on_card]
+         # later on the info above would be sent to a payment gateway like stripe or paypal etc.
+         # expiry date and security code are validated in serializers but we don't need to use them here.
+
+        last_4 = card_number[-4:] # get last 4 digits for the receipt
         
         # Calculate total cost
         winning_bid_amount = item.current_price
@@ -191,7 +202,9 @@ def process_payment(request, item_id):
                 "total_paid": float(total_amount),
                 "paid_at": payment.paid_at.isoformat(),
                 "confirmation_number": confirmation_number,
-                "payment_method": payment_method
+                "payment_method": payment_method,
+                "card_ending_in": last_4,
+                "cardholder": name_on_card
             }
         }, status=status.HTTP_200_OK)
         
