@@ -42,7 +42,7 @@ jobs:
         run: |
           kubectl delete job backend-migrate -n default --ignore-not-found
           kubectl apply -f k3s/5-migrate.yaml
-          kubectl wait --for=condition=complete job/backend-migrate -n default --timeout=180s
+          kubectl wait --for=condition=complete job/backend-migrate -n default --timeout=600s
       - name: Set backend image to this commit SHA and roll out
         env:
           REPO_LC: ${{ github.event.repository.name }}
@@ -56,5 +56,7 @@ jobs:
       # Since images are tagged ":latest", restart to pull the newest
       - name: Restart rollouts
         run: |
+          kubectl rollout restart deployment/auction-backend
+          kubectl rollout status  deployment/auction-backend --timeout=180s
           kubectl rollout restart deployment/auction-frontend
           kubectl rollout status  deployment/auction-frontend --timeout=180s

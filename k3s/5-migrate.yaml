@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   backoffLimit: 1
-  activeDeadlineSeconds: 300
-  ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 1200
+  ttlSecondsAfterFinished: 900
   template:
     spec:
       restartPolicy: Never
@@ -67,7 +67,15 @@ spec:
                   key: MYSQL_PASSWORD
           command: ["sh","-lc"]
           args:
-            - |
-              echo "Waiting for MySQL at ${MYSQL_HOST}:${MYSQL_PORT}..."
-              until nc -z "$MYSQL_HOST" "$MYSQL_PORT"; do sleep 2; done
-              python manage.py migrate --noinput
+            - >
+              set -e;
+              echo "Running migrations (--fake-initial, with retries)…";
+              for i in $(seq 1 120); do
+                python manage.py migrate --noinput --fake-initial && exit 0;
+                echo "Retry $i/120…"; sleep 5;
+              done;
+              echo "Migrate failed after retries"; exit 1
+            # - |
+            #   echo "Waiting for MySQL at ${MYSQL_HOST}:${MYSQL_PORT}..."
+            #   until nc -z "$MYSQL_HOST" "$MYSQL_PORT"; do sleep 2; done
+            #   python manage.py migrate --noinput
