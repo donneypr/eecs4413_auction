@@ -178,6 +178,26 @@ def process_payment(request, item_id):
             paid_at=timezone.now()
         )
         
+        # get user details
+        user = request.user
+        profile = getattr(user, "profile", None)
+
+        buyer_block = {
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+        }
+
+        address_block = (
+            {
+                "street_name": profile.street_name,
+                "street_number": profile.street_number,
+                "city": profile.city,
+                "country": profile.country,
+                "postal_code": profile.postal_code,
+            }
+            if profile else None  # or {} if you prefer empty object
+        )
         # Return receipt
         return Response({
             "success": True,
@@ -191,7 +211,9 @@ def process_payment(request, item_id):
                 "total_paid": float(total_amount),
                 "paid_at": payment.paid_at.isoformat(),
                 "confirmation_number": confirmation_number,
-                "payment_method": payment_method
+                "payment_method": payment_method,
+                "buyer": buyer_block,
+                "shipping_address": address_block
             }
         }, status=status.HTTP_200_OK)
         
