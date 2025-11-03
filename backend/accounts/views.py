@@ -17,13 +17,13 @@ from urllib.parse import urlencode
 
 User = get_user_model()
 
-# ---------- CSRF ----------
+# CSRF
 @ensure_csrf_cookie
 @require_GET
 def csrf(_request):
     return JsonResponse({"detail": "ok"})
 
-# ---------- Sign Up ----------
+# Sign Up
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def signup(request):
@@ -32,8 +32,8 @@ def signup(request):
     user = s.save()
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-# ---------- Sign In (Session) ----------
-# Optional: support 2FA code if you later enable it for a user
+# Sign In (Session)
+# Optional: support 2FA code if we add it later enable it for a user
 try:
     import pyotp
 except Exception:
@@ -42,7 +42,7 @@ except Exception:
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login_view(request):
-    # Accept identifier as either username or email; keep backward-compatible keys
+    # Accept identifier as either username or email, keep backward-compatible keys
     identifier = (
         request.data.get("identifier")
         or request.data.get("username")
@@ -88,9 +88,9 @@ def me(request):
         return Response({"authenticated": False})
     return Response({"authenticated": True, "user": UserSerializer(request.user).data})
 
-# ---------- Forgot Password ----------
+# Forgot Password
 def build_reset_url(request, uid, token):
-    base = os.environ.get("FRONTEND_BASE_URL")  # e.g. https://donney.ddns.net
+    base = os.environ.get("FRONTEND_BASE_URL") 
     q = urlencode({"uid": uid, "token": token})
     if base:
         return f"{base.rstrip('/')}/reset-password?{q}"
@@ -117,8 +117,8 @@ def password_reset(request):
     token = default_token_generator.make_token(user)
     reset_url = build_reset_url(request, uid, token)   # use the helper
 
-    # In dev we "send" via console email backend; also return link for convenience
-    # In prod you'd send an email and NOT return the link
+    # In dev we "send" via console email backend, also return link for convenience
+    # In prod send an email and NOT return the link
     print("Password reset link:", reset_url)
     return Response({"ok": True, "reset_url": reset_url})
 

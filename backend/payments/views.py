@@ -207,7 +207,7 @@ def process_payment(request, item_id):
                 "country": profile.country,
                 "postal_code": profile.postal_code,
             }
-            if profile else None  # or {} if you prefer empty object
+            if profile else None
         )
         # Return receipt
         return Response({

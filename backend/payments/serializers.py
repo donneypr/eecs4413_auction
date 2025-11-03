@@ -84,12 +84,6 @@ class ProcessPaymentSerializer(serializers.Serializer):
                 "Card number must be 16 digits" # digit check
             )
         
-        # Luhn algorithm for card validation // fully implemented but disabled for testing deliverable 2
-        # if not self._luhn_check(card_number):
-        #     raise serializers.ValidationError(
-        #         "Invalid card number"
-        #     )
-        
         return card_number
     
     def validate_name_on_card(self, value):
@@ -134,19 +128,4 @@ class ProcessPaymentSerializer(serializers.Serializer):
                 "Security code must be 3 or 4 digits"
             )
         return value
-    
-    # luhn algorithm disabled for testing.
-
-    # def _luhn_check(self, card_number):
-    #     """Luhn algorithm to validate card number"""
-    #     def digits_of(n):
-    #         return [int(d) for d in str(n)]
-        
-    #     digits = digits_of(card_number)
-    #     odd_digits = digits[-1::-2]
-    #     even_digits = digits[-2::-2]
-    #     checksum = sum(odd_digits)
-    #     for d in even_digits:
-    #         checksum += sum(digits_of(d * 2))
-    #     return checksum % 10 == 0
 

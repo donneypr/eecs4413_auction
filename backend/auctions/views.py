@@ -10,7 +10,7 @@ from decimal import Decimal
 
 # display auctions with filtering and sorting
 @api_view(['GET'])
-@permission_classes([AllowAny])  # or IsAuthenticated if you want it gated
+@permission_classes([AllowAny])
 def list_items(request):
     qs = AuctionItem.objects.select_related('seller', 'current_bidder').all()
 
@@ -59,7 +59,7 @@ def list_items(request):
 
 # search items
 @api_view(['GET'])
-@permission_classes([IsAuthenticated]) # only authenticated (logged-in) users can search for items
+@permission_classes([AllowAny]) # anyone can search for items
 def search_items(request):
     """
     Search items using keywords (UC 2.1)
@@ -89,7 +89,7 @@ def search_items(request):
 
 # create items
 @api_view(['POST'])
-@permission_classes([IsAuthenticated]) # could set this to IsAuthenticated so only authenticated users can create items
+@permission_classes([IsAuthenticated])
 def create_item(request):
     """
     Create Item (UC 2)
@@ -186,7 +186,7 @@ def place_bid(request, item_id):
         
         bid_amount = serializer.validated_data['bid_amount']
         
-        # For FORWARD auctions -->   check minimum bid (5% increment)
+        # For FORWARD auctions check minimum bid (5% increment)
         if item.auction_type == 'FORWARD':
             minimum_bid = item.current_price * Decimal('1.05')
             if bid_amount < minimum_bid:
