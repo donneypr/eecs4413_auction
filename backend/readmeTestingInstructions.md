@@ -1,4 +1,5 @@
 # TEST SIGN-UP SIGN-IN FORGOT PASSWORD
+
 # ----- Setup -----
 BASE=https://donney.ddns.net/api
 JAR="cookies.txt"
@@ -76,6 +77,8 @@ curl -i -X POST "$BASE/auth/logout/" \
   --cookie "csrftoken=$CSRF; sessionid=$SESSION"
 
 # ----- Password Reset -----
+follow instructions below
+
 # ---------- Setup ----------
 rm -f "$JAR"
 
@@ -92,11 +95,11 @@ RESP=$(curl -s -X POST "$BASE/auth/password-reset/" \
   -d '{"email":"testuser4@example.com"}')
 
 # (Alternative: by username)
-# RESP=$(curl -s -X POST "$BASE/auth/password-reset/" \
-#   -H "Content-Type: application/json" \
-#   -H "X-CSRFToken: $CSRF" \
-#   -b "$JAR" \
-#   -d '{"username":"testuser4"}')
+RESP=$(curl -s -X POST "$BASE/auth/password-reset/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $CSRF" \
+  -b "$JAR" \
+  -d '{"username":"testuser4"}')
 
 echo "$RESP"
 
@@ -118,7 +121,7 @@ curl -i -X POST "$BASE/auth/password-reset-confirm/" \
   -d '{"uid":"'"$RESET_UID"'","token":"'"$RESET_TOKEN"'","new_password":"SecurePass1234!"}'
 
 # Log in with new password
-#   save cookies (sessionid) into the jar
+# save cookies (sessionid) into the jar
 curl -i -X POST "$BASE/auth/login/" \
   -H "Content-Type: application/json" \
   -H "X-CSRFToken: $CSRF" \
@@ -207,7 +210,10 @@ echo "ITEM_ID=$ITEM_ID"
 # GET ITEM DETAIL
 curl -i "$BASE/items/$ITEM_ID/" -b "$JAR"
 
+# BECAUSE YOU AREN'T ABLE TO BID ON YOUR OWN ITEM YOU HAVE TO DO THE FOLLOWING TO TEST BIDDING VV
+
 # BEFORE PLACING BID, OPEN NEW TERMINAL WINDOW AND, GET CSRF TOKEN AND SESSION ID (SEE PREVIOUS COMMANDS) LOGIN AS USER:testuser3 PASS:SecurePass1234! THEN REFRESH CSRF TOKEN (SEE ABOVE) NOW YOU CAN PLACE A BID
+
 # PLACE BID
 curl -i -X POST "$BASE/items/$ITEM_ID/bid/" \
   -H "Content-Type: application/json" \
