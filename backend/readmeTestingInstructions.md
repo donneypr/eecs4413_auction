@@ -68,7 +68,7 @@ echo "SESSION=$SESSION"
 # (either use the sessionid directly…)
 curl -i "$BASE/auth/me/" --cookie "sessionid=$SESSION"
 # …or just use the cookie jar:
-# curl -i -b "$JAR" "$BASE/auth/me/"
+curl -i -b "$JAR" "$BASE/auth/me/"
 
 # ----- logout -----
 curl -i -X POST "$BASE/auth/logout/" \
