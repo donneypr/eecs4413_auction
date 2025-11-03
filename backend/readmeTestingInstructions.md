@@ -35,16 +35,15 @@ curl -i -X POST "$BASE/auth/login/" \
   -b "$JAR" -c "$JAR" \
   -d '{"identifier":"testuser","password":"SecurePass123!"}'
 
-# Copy sessionid from Set-Cookie (saved to cookie jar above)
-SESSION=$(awk '$6=="sessionid"{print $7}' "$JAR")
-echo "SESSION=$SESSION"
-
 # ----- who am i (/auth/me) -----
 # (either use the sessionid directly…)
 curl -i "$BASE/auth/me/" --cookie "sessionid=$SESSION"
-
 # …or just use the cookie jar:
 # curl -i -b "$JAR" "$BASE/auth/me/"
+
+# Copy sessionid from Set-Cookie (saved to cookie jar above)
+SESSION=$(awk '$6=="sessionid"{print $7}' "$JAR")
+echo "SESSION=$SESSION"
 
 # ----- logout -----
 curl -i -X POST "$BASE/auth/logout/" \
@@ -187,9 +186,16 @@ curl -i "$BASE/payments/$ITEM_ID/details/" -b "$JAR"
 # process payment
 CSRF=$(awk '/csrftoken/ {print $7}' "$JAR" | tail -1)
 
-curl -i -X POST "$BASE/$ITEM_ID/pay/" \
+curl -i -X POST "$BASE/payments/$ITEM_ID/pay/" \
   -H "Content-Type: application/json" \
   -H "X-CSRFToken: $CSRF" \
   --cookie "csrftoken=$CSRF" \
   -b "$JAR" -c "$JAR" \
-  -d '{"expedited_shipping":false,"payment_method":"Credit Card", "card_number":1234567891234567,"name_on_card":"testuser2","expiration_date":"02/26","security_code":321}'
+  -d '{
+    "expedited_shipping": false,
+    "payment_method": "Credit Card",
+    "card_number": "4242424242424242",
+    "name_on_card": "Test User",
+    "expiration_date": "02/26",
+    "security_code": "321"
+  }'
