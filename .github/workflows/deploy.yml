@@ -2,7 +2,7 @@ name: Deploy to k3s (self-hosted)
 
 on:
   workflow_run:
-    workflows: ["Build & Push Images"]  # must match the *name:* of your build workflow
+    workflows: ["Build & Push Images"]
     types: [completed]
     branches: [main]
   workflow_dispatch: {}

@@ -8,7 +8,7 @@ class UserProfile(models.Model):
     city          = models.CharField(max_length=100)
     country       = models.CharField(max_length=100)
     postal_code   = models.CharField(max_length=20)
-    # Optional TOTP secret for 2FA (leave null if 2FA disabled for this user)
+    # Optional TOTP secret for 2FA (if 2FA disabled for this user keep it as null)
     totp_secret   = models.CharField(max_length=64, blank=True, null=True)
     created_at    = models.DateTimeField(auto_now_add=True)
 

@@ -61,7 +61,7 @@ def login_view(request):
         except User.DoesNotExist:
             return Response({"detail":"invalid credentials"}, status=401)
         except User.MultipleObjectsReturned:
-            # Defensive: if legacy duplicates exist, require username
+            # if legacy duplicates exist, require username
             return Response({"detail":"multiple accounts use this email; use username"}, status=400)
 
     user = authenticate(request, username=username_for_auth, password=password)
@@ -94,7 +94,6 @@ def build_reset_url(request, uid, token):
     q = urlencode({"uid": uid, "token": token})
     if base:
         return f"{base.rstrip('/')}/reset-password?{q}"
-    # fallback: honors X-Forwarded-Proto and host correctly
     return request.build_absolute_uri(f"/reset-password?{q}")
 
 @api_view(["POST"])
@@ -117,7 +116,7 @@ def password_reset(request):
     token = default_token_generator.make_token(user)
     reset_url = build_reset_url(request, uid, token)   # use the helper
 
-    # In dev we "send" via console email backend, also return link for convenience
+    # In dev we send via console email backend, also return link for convenience
     # In prod send an email and NOT return the link
     print("Password reset link:", reset_url)
     return Response({"ok": True, "reset_url": reset_url})

@@ -1,10 +1,6 @@
 # --- Env files ---
 .env
 .env.db
-# If you prefer to ignore any env files, use:
-# .env*
-# !.env.example
-# !.env.local.example
 
 # --- Python / Django ---
 __pycache__/

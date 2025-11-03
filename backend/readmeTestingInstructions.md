@@ -125,6 +125,13 @@ curl -i -X POST "$BASE/auth/login/" \
   -b "$JAR" -c "$JAR" \
   -d '{"identifier":"testuser4","password":"SecurePass1234!"}'
 
+  ** TEST login with old password **
+  curl -i -X POST "$BASE/auth/login/" \
+  -H "Content-Type: application/json" \
+  -H "X-CSRFToken: $CSRF" \
+  -b "$JAR" -c "$JAR" \
+  -d '{"identifier":"testuser4","password":"SecurePass123!"}'
+
 # Sanity check who you are
 curl -i -b "$JAR" "$BASE/auth/me/"
 
