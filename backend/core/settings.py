@@ -115,9 +115,31 @@ CORS_ALLOWED_ORIGINS = [
     "https://donney.ddns.net",
 ]
 
+CORS_ALLOW_CREDENTIALS = True # added for login/singup frontend, tells the browser it's allowed to send and receive cookies
+
+# --- CSRF Settings ---
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF cookie for debugging
+CSRF_COOKIE_SAMESITE = 'Lax' # for security
+
 # --- Security (prod-friendly, harmless in dev) ---
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- Email Settings ---
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend"
+)
+
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+else:
+    # Console backend for development
+    DEFAULT_FROM_EMAIL = "noreply@example.com"

@@ -1,0 +1,266 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  padding: 3rem 1rem;
+}
+
+.wrapper {
+  max-width: 42rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.link {
+  font-weight: 500;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.link:hover {
+  color: #4338ca;
+}
+
+.form {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formSections {
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .gridTwo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gridThree {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .gridThree {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.helperText {
+    padding: 0.5rem 0.75rem;
+}
+
+.input {
+  margin-top: 0.25rem;
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+
+.input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.fieldError {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+.addressSection {
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: #991b1b;
+}
+
+.submitButton {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  color: white;
+  background-color: #4f46e5;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+.submitButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+}
+
+.submitButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.maxLengthTooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #374151;
+  color: white;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.maxLengthTooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 1rem;
+  border: 6px solid transparent;
+  border-bottom-color: #374151;
+}
+
+.passwordRequirements {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.requirementTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.requirement.met {
+  color: #059669;
+}
+
+.checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.requirement.met .checkmark {
+  background-color: #059669;
+  color: white;
+}
+
+.readOnly {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+  color: #6b7280;
+}
+
+.readOnly::placeholder {
+  color: #9ca3af;
+}
