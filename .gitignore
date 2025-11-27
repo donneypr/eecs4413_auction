@@ -1,6 +1,7 @@
 # --- Env files ---
 .env
 .env.db
+.env.local
 
 # --- Python / Django ---
 __pycache__/

@@ -15,12 +15,13 @@ services:
     build: { context: ./backend }
     container_name: auction_backend
     env_file: [ ./.env ]
-    environment: { TZ: America/Toronto }
+    environment: 
+      TZ: America/Toronto
     volumes: [ ./backend:/app ]
     depends_on:
       db: { condition: service_healthy }
     ports: [ "8000:8000" ]
-
+    
   frontend:
     build: { context: ./frontend }
     container_name: auction_frontend
