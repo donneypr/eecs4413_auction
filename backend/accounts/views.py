@@ -45,9 +45,7 @@ def signup(_request):
     return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
-# ---------- Sign In (Session) ----------
 # Sign In (Session)
-# Optional: support 2FA code if we add it later enable it for a user
 try:
     import pyotp
 except Exception:
@@ -111,6 +109,7 @@ def build_reset_url(_request, uid, token):
         return f"{base.rstrip('/')}/reset-password?{q}"
     return _request.build_absolute_uri(f"/reset-password?{q}")
 
+# Password Reset view
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
@@ -131,16 +130,6 @@ def password_reset(_request):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     reset_url = build_reset_url(_request, uid, token)
-
-    # Debug: Print email settings
-    print("=== EMAIL DEBUG ===")
-    print(f"EMAIL_BACKEND: {os.getenv('EMAIL_BACKEND')}")
-    print(f"EMAIL_HOST: {os.getenv('EMAIL_HOST')}")
-    print(f"EMAIL_HOST_USER: {os.getenv('EMAIL_HOST_USER')}")
-    print(f"EMAIL_HOST_PASSWORD: {'SET' if os.getenv('EMAIL_HOST_PASSWORD') else 'NOT SET'}")
-    print(f"FRONTEND_BASE_URL: {os.getenv('FRONTEND_BASE_URL')}")
-    print(f"Reset URL: {reset_url}")
-    print("==================")
 
     subject = "KickBay - Password Reset Request"
     message = f"""
@@ -211,6 +200,7 @@ KickBay Website Team
     
     return Response({"ok": True})
 
+# Password Reset Token Confirmation 
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
