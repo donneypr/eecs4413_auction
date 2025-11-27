@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class AuctionItem(models.Model):
-    AUCTION_TYPES = [ # types of auctions we will have, google definitions if do not know
+    AUCTION_TYPES = [
         ('FORWARD', 'Forward'),
         ('DUTCH', 'Dutch'),
     ]

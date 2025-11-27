@@ -152,18 +152,18 @@ def process_payment(request, item_id):
         
         # Validate input
         serializer = ProcessPaymentSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        expedited_shipping = serializer.validated_data['expedited_shipping']
-        payment_method = serializer.validated_data.get('payment_method', 'Credit Card')
-        # the following is validated but not stored
-        card_number = serializer.validated_data[card_number]
-        name_on_card = serializer.validated_data[name_on_card]
-         # later on the info above would be sent to a payment gateway like stripe or paypal etc.
-         # expiry date and security code are validated in serializers but we don't need to use them here.
+        serializer.is_valid(raise_exception=True)
 
-        last_4 = card_number[-4:] # get last 4 digits for the receipt
+        expedited_shipping = serializer.validated_data["expedited_shipping"]
+        payment_method     = serializer.validated_data.get("payment_method", "Credit Card")
+
+        # pull (write_only) card fields from validated_data — not stored in DB
+        card_number     = serializer.validated_data["card_number"]
+        name_on_card    = serializer.validated_data["name_on_card"]
+        expiration_date = serializer.validated_data["expiration_date"]
+        security_code   = serializer.validated_data["security_code"]
+
+        last_4 = card_number[-4:]  # for receipts/logs if needed (avoid logging full PAN)
         
         # Calculate total cost
         winning_bid_amount = item.current_price
@@ -207,7 +207,7 @@ def process_payment(request, item_id):
                 "country": profile.country,
                 "postal_code": profile.postal_code,
             }
-            if profile else None  # or {} if you prefer empty object
+            if profile else None
         )
         # Return receipt
         return Response({

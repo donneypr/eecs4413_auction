@@ -1,8 +1,8 @@
-name: Deploy to k3s (self-hosted)
+name: DR deploy to k3s (self-hosted)
 
 on:
   workflow_run:
-    workflows: ["Build & Push Images"]
+    workflows: ["Build & Push Images","Deploy to k3s (self-hosted)"]
     types: [completed]
     branches: [main]
   workflow_dispatch: {}
@@ -16,9 +16,9 @@ jobs:
     if: >
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main'
-    runs-on: [self-hosted, main-k3s]
+    runs-on: [self-hosted, dr-k3s]
     env:
-      KUBECONFIG: /home/pve1/.kube/config
+      KUBECONFIG: /home/dradmin/.kube/config
     steps:
       - uses: actions/checkout@v4
         with:

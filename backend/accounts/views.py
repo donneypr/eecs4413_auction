@@ -26,7 +26,7 @@ except Exception:
 User = get_user_model()
 
 
-# ---------- CSRF ----------
+# CSRF
 @ensure_csrf_cookie
 @require_GET
 def csrf(_request):
@@ -34,7 +34,7 @@ def csrf(_request):
     return JsonResponse({"csrfToken": token})
 
 
-# ---------- Sign Up ----------
+# Sign Up
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
@@ -46,10 +46,18 @@ def signup(_request):
 
 
 # ---------- Sign In (Session) ----------
+# Sign In (Session)
+# Optional: support 2FA code if we add it later enable it for a user
+try:
+    import pyotp
+except Exception:
+    pyotp = None
+
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
 def login_view(_request):
+    # Accept identifier as either username or email, keep backward-compatible keys
     identifier = (
         _request.data.get("identifier")
         or _request.data.get("username")
@@ -95,14 +103,13 @@ def me(_request):
     return Response({"authenticated": True, "user": UserSerializer(_request.user).data})
 
 
-# ---------- Forgot Password ----------
+# Forgot Password
 def build_reset_url(_request, uid, token):
-    base = os.environ.get("FRONTEND_BASE_URL")
+    base = os.environ.get("FRONTEND_BASE_URL") 
     q = urlencode({"uid": uid, "token": token})
     if base:
         return f"{base.rstrip('/')}/reset-password?{q}"
     return _request.build_absolute_uri(f"/reset-password?{q}")
-
 
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
@@ -203,8 +210,6 @@ KickBay Website Team
         traceback.print_exc()
     
     return Response({"ok": True})
-
-
 
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])

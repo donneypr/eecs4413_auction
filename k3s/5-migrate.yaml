@@ -75,7 +75,3 @@ spec:
                 echo "Retry $i/120…"; sleep 5;
               done;
               echo "Migrate failed after retries"; exit 1
-            # - |
-            #   echo "Waiting for MySQL at ${MYSQL_HOST}:${MYSQL_PORT}..."
-            #   until nc -z "$MYSQL_HOST" "$MYSQL_PORT"; do sleep 2; done
-            #   python manage.py migrate --noinput

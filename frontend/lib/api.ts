@@ -2,6 +2,7 @@ const isServer = typeof window === "undefined";
 
 export const API_BASE = isServer
   ? process.env.API_BASE_INTERNAL || "http://backend:8000"
+  // in the browser, reach Django at localhost
   : process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 class ApiClient {
