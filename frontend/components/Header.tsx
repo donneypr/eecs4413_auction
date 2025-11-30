@@ -19,7 +19,7 @@ function SearchBoxInner() {
   const params = new URLSearchParams(searchParams);
   if (q) params.set('q', q);
   else params.delete('q');
-  router.push(`/?${params.toString()}`);   // go to home, not /items
+  router.push(params.toString() ? `/?${params}` : `/`);   // go to home, not /items
 };
 
   return (
