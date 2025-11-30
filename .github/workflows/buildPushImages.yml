@@ -53,6 +53,7 @@ jobs:
             ${{ steps.names.outputs.backend }}:${{ steps.names.outputs.tag_latest }}
             ${{ steps.names.outputs.backend }}:${{ steps.names.outputs.tag_sha }}
 
+
       - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
@@ -61,3 +62,5 @@ jobs:
           tags: |
             ${{ steps.names.outputs.frontend }}:${{ steps.names.outputs.tag_latest }}
             ${{ steps.names.outputs.frontend }}:${{ steps.names.outputs.tag_sha }}
+          build-args: |
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
