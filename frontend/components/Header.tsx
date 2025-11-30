@@ -15,12 +15,12 @@ function SearchBoxInner() {
   }, [searchParams]);
 
   const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams(searchParams);
-    if (q) params.set('q', q);
-    else params.delete('q');
-    router.push(`/items?${params.toString()}`);
-  };
+  e.preventDefault();
+  const params = new URLSearchParams(searchParams);
+  if (q) params.set('q', q);
+  else params.delete('q');
+  router.push(`/?${params.toString()}`);   // go to home, not /items
+};
 
   return (
     <form onSubmit={onSubmit} className="flex w-full max-w-xl gap-2">
