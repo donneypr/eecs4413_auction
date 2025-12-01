@@ -75,6 +75,36 @@ spec:
                 secretKeyRef:
                   name: auction-secrets
                   key: MYSQL_PASSWORD
+            - name: EMAIL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: EMAIL_HOST
+            - name: EMAIL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: EMAIL_PORT
+            - name: EMAIL_USE_TLS
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: EMAIL_USE_TLS
+            - name: EMAIL_HOST_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: EMAIL_HOST_USER
+            - name: DEFAULT_FROM_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: DEFAULT_FROM_EMAIL
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auction-secrets
+                  key: EMAIL_HOST_PASSWORD
           command: ["gunicorn"]
           args:
             - "core.wsgi:application"

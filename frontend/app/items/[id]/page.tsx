@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-
 import styles from './page.module.css';
-
 import { itemsApi } from '@/lib/api';
 import Countdown from '@/components/Countdown';
 
@@ -38,6 +36,27 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/auth/me/', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        setIsAuthenticated(data.authenticated || false);
+      } catch (err) {
+        setIsAuthenticated(false);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     const fetchItem = async () => {
@@ -54,7 +73,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     fetchItem();
   }, [resolvedParams.id]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className={styles.loadingContainer}>
         <p className={styles.loadingText}>Loading item...</p>
@@ -170,11 +189,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               )}
 
               <div className={styles.infoRow}>
-  <span className={styles.infoLabel}>Time Remaining:</span>
-  <span className={`${styles.infoValue} ${styles.infoTime}`}>
-    <Countdown endTime={item.end_time} />
-  </span>
-</div>
+                <span className={styles.infoLabel}>Time Remaining:</span>
+                <span className={`${styles.infoValue} ${styles.infoTime}`}>
+                  <Countdown endTime={item.end_time} />
+                </span>
+              </div>
 
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Created At:</span>
@@ -194,9 +213,27 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               )}
             </div>
 
-            {/* Bid Button */}
+            {/* Bid Button with Auth Check */}
             {item.is_active && (
-              <button className={styles.placeBidButton}>Place Bid</button>
+              <div className={styles.bidSection}>
+                <button 
+                  className={styles.placeBidButton}
+                  disabled={!isAuthenticated}
+                  style={{
+                    opacity: isAuthenticated ? 1 : 0.5,
+                    cursor: isAuthenticated ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Place Bid
+                </button>
+                
+                {/* Warning message for non-authenticated users */}
+                {!isAuthenticated && (
+                  <p className={styles.authWarning}>
+                    ⚠️ You must be logged in to place a bid
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
