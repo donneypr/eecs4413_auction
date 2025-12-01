@@ -2,7 +2,7 @@ name: DR deploy to k3s (self-hosted)
 
 on:
   workflow_run:
-    workflows: ["Build & Push Images","Deploy to k3s (self-hosted)"]
+    workflows: ["Build & Push Images"]
     types: [completed]
     branches: [main]
   workflow_dispatch: {}
