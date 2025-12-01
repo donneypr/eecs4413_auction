@@ -37,7 +37,7 @@ class AuctionItem(models.Model):
     dutch_decrease_interval = models.IntegerField(
         null=True,
         blank=True,
-        help_text="Minutes between price decreases"
+        help_text="Time interval in seconds for price decrease"
     )
     last_price_update = models.DateTimeField(null=True, blank=True)
 
