@@ -12,12 +12,11 @@ class AuctionItem(models.Model):
     starting_price = models.DecimalField(max_digits=10, decimal_places=2)
     current_price = models.DecimalField(max_digits=10, decimal_places=2)
     auction_type = models.CharField(max_length=10, choices=AUCTION_TYPES)
-    end_time = models.DateTimeField()  # only for forward auctions
+    end_time = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='items_selling')
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # additional fields to store the current bidder and the previous bid history of the auction
     current_bidder = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -25,26 +24,23 @@ class AuctionItem(models.Model):
         blank=True,
         related_name='items_bidding_on'
     )
+    bid_history = models.JSONField(default=list, blank=True)
 
-    bid_history = models.JSONField(default=list, blank=True)  # Stores [{username, amount, timestamp}, ...]
-
-    # DUTCH auction rules, decreasing price by a set percentage every set amount of minutes
+    # DUTCH auction fields
     dutch_decrease_percentage = models.DecimalField(
-        max_digits=5, 
-        decimal_places=2, 
-        null=True, 
+        max_digits=5,
+        decimal_places=2,
+        null=True,
         blank=True,
         help_text="Percentage to decrease price (e.g., type 5.00 for 5%, 10.00 for 10%)"
     )
-
     dutch_decrease_interval = models.IntegerField(
-        null=True, 
+        null=True,
         blank=True,
         help_text="Minutes between price decreases"
     )
+    last_price_update = models.DateTimeField(null=True, blank=True)
 
-    last_price_update = models.DateTimeField(null=True, blank=True)  # Track the last auto-decrease
-    
     standard_shipping_cost = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -58,6 +54,19 @@ class AuctionItem(models.Model):
         help_text="Additional cost for expedited shipping cost"
     )
 
+    # NEW: Images stored as base64 in JSON
+    # Structure: [{"data": "base64string", "format": "jpeg", "order": 0}, ...]
+    images = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of base64-encoded images with metadata"
+    )
+
     def __str__(self):
         return self.name
-    
+
+    def get_thumbnail_url(self):
+        """Returns the first image (thumbnail) or None"""
+        if self.images and len(self.images) > 0:
+            return f"data:image/{self.images[0].get('format', 'jpeg')};base64,{self.images[0]['data']}"
+        return None
