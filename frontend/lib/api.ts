@@ -1,3 +1,4 @@
+// frontend/lib/api.ts
 const isServer = typeof window === 'undefined';
 
 export const API_BASE = isServer
@@ -7,153 +8,101 @@ export const API_BASE = isServer
 class ApiClient {
   private csrfToken: string | null = null;
 
-  getCsrfTokenFromCookie(): string | null {
+  private getCsrfTokenFromCookie(): string | null {
     if (typeof document === 'undefined') return null;
-
     const name = 'csrftoken';
-    const cookies = document.cookie.split(';');
-
-    for (let cookie of cookies) {
-      const [cookieName, cookieValue] = cookie.trim().split('=');
-      if (cookieName === name) {
-        return decodeURIComponent(cookieValue);
-      }
+    for (const raw of document.cookie.split(';')) {
+      const [k, v] = raw.trim().split('=');
+      if (k === name) return decodeURIComponent(v || '');
     }
-
     return null;
   }
 
-  async getCSRFToken(): Promise<string> {
-    // Try to get from cookie first
-    const cookieToken = this.getCsrfTokenFromCookie();
-    if (cookieToken) {
-      this.csrfToken = cookieToken;
-      return cookieToken;
+  private async ensureCsrf(): Promise<string> {
+    // 1) try cookie
+    const fromCookie = this.getCsrfTokenFromCookie();
+    if (fromCookie) {
+      this.csrfToken = fromCookie;
+      return fromCookie;
     }
-
-    // If not in cookie, fetch from server
-    const response = await fetch(`${API_BASE}/auth/csrf/`, {
+    // 2) fetch from backend
+    const res = await fetch(`${API_BASE}/auth/csrf/`, {
       method: 'GET',
       credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch CSRF token');
-    }
-
-    const data = await response.json();
-    this.csrfToken = data.csrfToken;
-
-    if (!this.csrfToken) {
-      throw new Error('CSRF token not found in response');
-    }
-
-    return this.csrfToken;
+    if (!res.ok) throw new Error('Failed to fetch CSRF token');
+    const json = await res.json();
+    const token = json?.csrfToken || json?.csrf || json?.token;
+    if (!token) throw new Error('CSRF token not found in response');
+    this.csrfToken = token;
+    return token;
   }
 
-  async post(endpoint: string, body: any) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    const csrfToken = await this.getCSRFToken();
+  private clean(endpoint: string) {
+    return endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  }
 
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
+  private async safeJson(res: Response): Promise<any> {
+    const txt = await res.text();
+    if (!txt) return null;                // e.g., 204 No Content (logout)
+    try { return JSON.parse(txt); } catch { return txt; }
+  }
+
+  private async request<T>(
+    method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+    endpoint: string,
+    body?: unknown
+  ): Promise<T> {
+    const clean = this.clean(endpoint);
+
+    const headers: Record<string, string> = {};
+    if (method === 'GET') {
+      headers['Accept'] = 'application/json';
+    } else {
+      const csrf = await this.ensureCsrf();
+      headers['Content-Type'] = 'application/json';
+      headers['X-CSRFToken'] = csrf;      // Django expects this
+    }
+
+    const res = await fetch(`${API_BASE}/${clean}`, {
+      method,
       credentials: 'include',
-      body: JSON.stringify(body),
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
 
-    const data = await response.json();
+    const data = await this.safeJson(res);
 
-    if (!response.ok) {
-      throw data;
+    if (!res.ok) {
+      const msg =
+        (data && (data.detail || data.error || data.message)) ||
+        `${res.status} ${res.statusText}`;
+      throw new Error(String(msg));
     }
-
-    return data;
+    return data as T;
   }
 
-  async patch(endpoint: string, body: any) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    const csrfToken = await this.getCSRFToken();
-
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw data;
-    }
-
-    return data;
-  }
-
-  async delete(endpoint: string) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    const csrfToken = await this.getCSRFToken();
-
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      method: 'DELETE',
-      headers: {
-        'X-CSRFToken': csrfToken,
-      },
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw data;
-    }
-
-    return data;
-  }
-
-  async get(endpoint: string) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      credentials: 'include',
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw data;
-    }
-
-    return data;
-  }
+  get<T = any>(endpoint: string)    { return this.request<T>('GET', endpoint); }
+  post<T = any>(endpoint: string, body?: unknown)  { return this.request<T>('POST', endpoint, body); }
+  patch<T = any>(endpoint: string, body?: unknown) { return this.request<T>('PATCH', endpoint, body); }
+  delete<T = any>(endpoint: string) { return this.request<T>('DELETE', endpoint); }
 }
 
 export const apiClient = new ApiClient();
 
-// User endpoints
+// Optional convenience wrappers (match what you had in the PR)
 export const userApi = {
   getItems: (username: string) => apiClient.get(`/users/${username}/items/`),
-  getBids: (username: string) => apiClient.get(`/users/${username}/bids/`),
+  getBids:  (username: string) => apiClient.get(`/users/${username}/bids/`),
 };
 
-// Items endpoints
 export const itemsApi = {
-  getItem: (itemId: number) => apiClient.get(`/items/${itemId}/`),
-  listItems: () => apiClient.get('/items/'),
-  createItem: (data: any) => apiClient.post('/items/create/', data),
-  editItem: (itemId: number, data: any) =>
-    apiClient.patch(`/items/${itemId}/edit/`, data),
-  deleteItem: (itemId: number) => apiClient.delete(`/items/${itemId}/delete/`),
-  placeBid: (itemId: number, amount: number) =>
-    apiClient.post(`/items/${itemId}/bid/`, { amount }),
+  getItem:   (itemId: number)        => apiClient.get(`/items/${itemId}/`),
+  listItems: ()                      => apiClient.get('/items/'),
+  createItem:(data: any)             => apiClient.post('/items/create/', data),
+  editItem:  (itemId: number, data: any) => apiClient.patch(`/items/${itemId}/edit/`, data),
+  deleteItem:(itemId: number)        => apiClient.delete(`/items/${itemId}/delete/`),
+  placeBid:  (itemId: number, amount: number) =>
+               apiClient.post(`/items/${itemId}/bid/`, { amount }),
 };
