@@ -114,13 +114,16 @@ export default function Header() {
           <div className="w-20 h-6" />
         ) : user ? (
           <div className="flex items-center gap-3">
-            <Link href="/account" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-base">
-                {initial}
-              </div>
-              {/* remove `hidden sm:inline` if you always want it visible */}
-              <span className="hidden sm:inline">{displayName}</span>
-            </Link>
+            <Link
+  href={`/profile/${encodeURIComponent(user.username)}`}
+  prefetch={false}
+  className="flex items-center gap-2"
+>
+  <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-base">
+    {initial}
+  </div>
+  <span className="hidden sm:inline">{displayName}</span>
+</Link>
             <button onClick={onLogout} className="underline text-sm" type="button">
               Log out
             </button>
