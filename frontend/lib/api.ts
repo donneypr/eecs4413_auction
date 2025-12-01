@@ -2,8 +2,8 @@
 const isServer = typeof window === 'undefined';
 
 export const API_BASE = isServer
-  ? process.env.API_BASE_INTERNAL || 'http://localhost:8000'
-  : process.env.NEXT_PUBLIC_API_BASE || 'http://backend:8000';
+  ? process.env.API_BASE_INTERNAL || 'http://backend:8000'
+  : process.env.NEXT_PUBLIC_API_BASE || '/api';
 
 class ApiClient {
   private csrfToken: string | null = null;
