@@ -34,7 +34,7 @@ export default function ItemCard({
       className="block rounded-2xl border hover:shadow overflow-hidden bg-white"
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] bg-gray-100">
+      <div className="relative aspect-[16/9] bg-gray-100">
         {thumbSrc ? (
           <img
             src={thumbSrc}

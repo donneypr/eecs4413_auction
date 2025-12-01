@@ -41,7 +41,6 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <main className="p-4 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-semibold mb-4">Active auctions</h1>
 
       {/* Pure GET form (kept) */}
       <form method="get" action="/" className="mb-4 flex flex-wrap items-center gap-3">
@@ -69,7 +68,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {results.length === 0 ? (
         <p>No results.</p>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           {results.map((item) => (
             <ItemCard key={item.id} item={item} serverNow={data.serverNow} />
           ))}
