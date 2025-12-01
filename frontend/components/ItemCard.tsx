@@ -33,7 +33,6 @@ export default function ItemCard({
       href={`/items/${item.id}`}
       className="block rounded-2xl border hover:shadow overflow-hidden bg-white"
     >
-      {/* Image */}
       <div className="relative aspect-[16/9] bg-gray-100">
         {thumbSrc ? (
           <img
@@ -49,7 +48,6 @@ export default function ItemCard({
         )}
       </div>
 
-      {/* Body */}
       <div className="p-4">
         <div className="text-lg font-semibold line-clamp-1">{item.name}</div>
         {item.description && (
@@ -58,7 +56,7 @@ export default function ItemCard({
         <div className="mt-2">
           Current: <strong>${Number(item.current_price).toFixed(2)}</strong>
         </div>
-        <div className="mt-1 text-xs text-gray-600">
+        <div className="mt-1 text-xs text-gray-600" suppressHydrationWarning>
           <Countdown endTime={item.end_time} serverNow={serverNow} />
         </div>
       </div>
