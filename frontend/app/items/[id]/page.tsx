@@ -5,6 +5,7 @@ import { useState, useEffect, use } from 'react';
 import styles from './page.module.css';
 
 import { itemsApi } from '@/lib/api';
+import Countdown from '@/components/Countdown';
 
 interface Image {
   data: string;
@@ -169,9 +170,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               )}
 
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Time Remaining:</span>
-                <span className={`${styles.infoValue} ${styles.infoTime}`}>{item.remaining_time}</span>
-              </div>
+  <span className={styles.infoLabel}>Time Remaining:</span>
+  <span className={`${styles.infoValue} ${styles.infoTime}`}>
+    <Countdown endTime={item.end_time} />
+  </span>
+</div>
 
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Created At:</span>

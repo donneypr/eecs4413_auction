@@ -2,21 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import styles from './page.module.css';
 import { userApi, itemsApi } from '@/lib/api';
-
-interface AuctionItem {
-  id: number;
-  name: string;
-  description: string;
-  starting_price: string;
-  current_price: string;
-  seller_username: string;
-  current_bidder_username: string | null;
-  is_active: boolean;
-  images: Array<{ data: string; format: string; order: number }>;
-  thumbnail: string;
-}
+import type { AuctionItem } from '@/lib/types';
 
 interface BidItem extends AuctionItem {
   remaining_time: string;
@@ -24,8 +13,7 @@ interface BidItem extends AuctionItem {
 }
 
 export default function ProfilePage() {
-  const params = useParams();
-  const username = params.username as string;
+  const { username } = useParams<{ username: string }>();   // <-- from URL
   const [activeTab, setActiveTab] = useState<'items' | 'bids'>('items');
   const [items, setItems] = useState<AuctionItem[]>([]);
   const [bids, setBids] = useState<BidItem[]>([]);
@@ -34,31 +22,33 @@ export default function ProfilePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [username]);
-
-  const fetchData = async () => {
+  async function fetchData(uname: string) {
     try {
       setLoading(true);
       const [itemsData, bidsData] = await Promise.all([
-        userApi.getItems(username),
-        userApi.getBids(username),
+        userApi.getItems(uname),
+        userApi.getBids(uname),
       ]);
       setItems(itemsData);
-      setBids(bidsData);
+      setBids(bidsData as BidItem[]);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (typeof username === 'string' && username) {
+      fetchData(username);
+    }
+  }, [username]);
 
   const handleDeleteItem = async (itemId: number) => {
     try {
       await itemsApi.deleteItem(itemId);
-      setItems(items.filter((item) => item.id !== itemId));
+      setItems((prev) => prev.filter((it) => it.id !== itemId));
       setDeleteConfirmId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete item');
@@ -67,14 +57,10 @@ export default function ProfilePage() {
 
   const ItemCard = ({ item, isBid = false }: { item: AuctionItem | BidItem; isBid?: boolean }) => (
     <div className={styles.itemCard}>
-      <a href={`/items/${item.id}`}>
+      <Link href={`/items/${item.id}`}>
         <div className={styles.itemImage}>
           {item.thumbnail ? (
-            <img
-              src={item.thumbnail}
-              alt={item.name}
-              className={styles.itemImageImg}
-            />
+            <img src={item.thumbnail} alt={item.name} className={styles.itemImageImg} />
           ) : (
             <div className={styles.loadingText}>No image</div>
           )}
@@ -86,12 +72,12 @@ export default function ProfilePage() {
             {item.is_active ? 'Active' : 'Ended'}
           </span>
         </div>
-      </a>
+      </Link>
 
       <div className={styles.itemContent}>
-        <a href={`/items/${item.id}`}>
+        <Link href={`/items/${item.id}`}>
           <h3 className={styles.itemName}>{item.name}</h3>
-        </a>
+        </Link>
 
         <div className={styles.priceSection}>
           <span className={styles.priceLabel}>Price:</span>
@@ -106,28 +92,25 @@ export default function ProfilePage() {
         )}
 
         {!isBid && (
-  <div className={styles.actions}>
-    <button
-      onClick={() => setEditingId(item.id)}
-      className={styles.editButton}
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => setDeleteConfirmId(item.id)}
-      className={styles.deleteButton}
-      title="Delete item"
-      aria-label="Delete item"
-    >
-      🗑️
-    </button>
-  </div>
-)}
+          <div className={styles.actions}>
+            <button onClick={() => setEditingId(item.id)} className={styles.editButton}>
+              Edit
+            </button>
+            <button
+              onClick={() => setDeleteConfirmId(item.id)}
+              className={styles.deleteButton}
+              title="Delete item"
+              aria-label="Delete item"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 
-  if (loading) {
+  if (!username || loading) {
     return (
       <div className={styles.container}>
         <div className={styles.loadingContainer}>
@@ -231,7 +214,7 @@ export default function ProfilePage() {
           onClose={() => setEditingId(null)}
           onSuccess={() => {
             setEditingId(null);
-            fetchData();
+            fetchData(username);
           }}
         />
       )}
