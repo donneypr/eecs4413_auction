@@ -1,15 +1,17 @@
 export const dynamic = 'force-dynamic';
 
+import ItemCard from '@/components/ItemCard';
+
 type Item = {
   id: number;
   name: string;
   description: string;
   current_price: number | string;
-  remaining_time?: string;
+  end_time: string;      // <-- use absolute end time
 };
 
-async function searchItems(q: string | undefined, sort: string | undefined, page: string | undefined) {
-  const base = process.env.NEXT_PUBLIC_API_BASE!;
+async function searchItems(q?: string, sort?: string, page?: string) {
+  const base = process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
   const params = new URLSearchParams();
   if (q) params.set('keyword', q);
   if (sort) params.set('sort', sort);
@@ -18,24 +20,26 @@ async function searchItems(q: string | undefined, sort: string | undefined, page
   params.set('page_size', '24');
 
   const res = await fetch(`${base}/items/search/?${params.toString()}`, { cache: 'no-store' });
-  if (!res.ok) return { results: [], count: 0, page: 1, page_size: 24 };
-  return res.json();
+  const serverNow = Date.parse(res.headers.get('date') ?? new Date().toUTCString());
+
+  if (!res.ok) return { results: [] as Item[], count: 0, page: 1, page_size: 24, serverNow };
+  const data = await res.json();
+  return { ...data, serverNow } as { results: Item[]; count: number; page: number; page_size: number; serverNow: number };
 }
 
 export default async function ItemsPage({
-  searchParams
+  searchParams,
 }: {
   searchParams: { q?: string; sort?: string; page?: string };
 }) {
   const { q, sort, page } = searchParams;
   const data = await searchItems(q, sort, page);
-  const items: Item[] = data.results ?? [];
+  const items = data.results ?? [];
 
   return (
     <section className="p-6 space-y-4">
       <h1 className="text-xl font-semibold">Search results{q ? ` for “${q}”` : ''}</h1>
 
-      {/* (Optional) basic sort dropdown that just links back with a different sort param */}
       <div className="flex items-center gap-3">
         <a className="underline text-sm" href={`/items?${new URLSearchParams({ q: q ?? '', sort: 'ending_soon' })}`}>Ending soon</a>
         <a className="underline text-sm" href={`/items?${new URLSearchParams({ q: q ?? '', sort: 'newest' })}`}>Newest</a>
@@ -48,17 +52,8 @@ export default async function ItemsPage({
       ) : (
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((it) => (
-            <li key={it.id} className="border rounded p-4">
-              <a href={`/items/${it.id}`} className="font-medium hover:underline">
-                {it.name}
-              </a>
-              <div className="text-sm mt-1 line-clamp-2">{it.description}</div>
-              <div className="mt-2 text-sm">
-                Current: <span className="font-semibold">${it.current_price}</span>
-              </div>
-              {it.remaining_time && (
-                <div className="text-xs text-gray-600">Ends in: {it.remaining_time}</div>
-              )}
+            <li key={it.id}>
+              <ItemCard item={it} serverNow={data.serverNow} />
             </li>
           ))}
         </ul>
