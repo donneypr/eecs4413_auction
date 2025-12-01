@@ -13,7 +13,6 @@ export interface SignupData {
   country: string;
   postal_code: string;
 }
-
 export interface LoginData {
   username: string;
   password: string;
