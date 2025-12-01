@@ -4,6 +4,9 @@ import { useState, useEffect, use } from 'react';
 import styles from './page.module.css';
 import { itemsApi } from '@/lib/api';
 import Countdown from '@/components/Countdown';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from 'app/contexts/AuthContext';
 
 interface Image {
   data: string;
@@ -31,33 +34,15 @@ interface Item {
 
 export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const { user, loading: authLoading } = useAuth(); // Use auth context
+  
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
 
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/auth/me/', {
-          credentials: 'include'
-        });
-        const data = await response.json();
-        setIsAuthenticated(data.authenticated || false);
-      } catch (err) {
-        setIsAuthenticated(false);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
+  // Fetch item data
   useEffect(() => {
     const fetchItem = async () => {
       try {
@@ -218,17 +203,17 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               <div className={styles.bidSection}>
                 <button 
                   className={styles.placeBidButton}
-                  disabled={!isAuthenticated}
+                  disabled={!user}
                   style={{
-                    opacity: isAuthenticated ? 1 : 0.5,
-                    cursor: isAuthenticated ? 'pointer' : 'not-allowed'
+                    opacity: user ? 1 : 0.5,
+                    cursor: user ? 'pointer' : 'not-allowed'
                   }}
                 >
                   Place Bid
                 </button>
                 
                 {/* Warning message for non-authenticated users */}
-                {!isAuthenticated && (
+                {!user && (
                   <p className={styles.authWarning}>
                     ⚠️ You must be logged in to place a bid
                   </p>
