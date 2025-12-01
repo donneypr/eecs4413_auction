@@ -33,6 +33,10 @@ INSTALLED_APPS = [
     "payments",
 ]
 
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",  # dev
@@ -42,6 +46,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DATA_UPLOAD_MAX_MEMORY_SIZE": 26214400,  # 25MB
+    "FILE_UPLOAD_MAX_MEMORY_SIZE": 26214400,  # 25MB
 }
 
 # Dev email for password reset (prints emails to console)
