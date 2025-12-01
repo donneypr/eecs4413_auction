@@ -83,10 +83,10 @@ class ApiClient {
     return data as T;
   }
 
-  get<T>(endpoint: string)    { return this.request<T>('GET', endpoint); }
-  post<T>(endpoint: string, body?: unknown)  { return this.request<T>('POST', endpoint, body); }
-  patch<T>(endpoint: string, body?: unknown) { return this.request<T>('PATCH', endpoint, body); }
-  delete<T>(endpoint: string) { return this.request<T>('DELETE', endpoint); }
+  get<T = any>(endpoint: string)    { return this.request<T>('GET', endpoint); }
+  post<T = any>(endpoint: string, body?: unknown)  { return this.request<T>('POST', endpoint, body); }
+  patch<T = any>(endpoint: string, body?: unknown) { return this.request<T>('PATCH', endpoint, body); }
+  delete<T = any>(endpoint: string) { return this.request<T>('DELETE', endpoint); }
 }
 
 export const apiClient = new ApiClient();
