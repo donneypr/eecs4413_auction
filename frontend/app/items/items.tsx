@@ -2,12 +2,16 @@ export const dynamic = 'force-dynamic';
 
 import ItemCard from '@/components/ItemCard';
 
+type Image = { data: string; format: string; order: number };
+
 type Item = {
   id: number;
   name: string;
   description: string;
   current_price: number | string;
-  end_time: string;      // <-- use absolute end time
+  end_time: string;
+  thumbnail?: string;
+  images?: Image[];
 };
 
 async function searchItems(q?: string, sort?: string, page?: string) {

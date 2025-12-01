@@ -18,7 +18,6 @@ export default function Countdown({
   className,
   serverNow,
 }: { endTime: string; className?: string; serverNow?: number }) {
-  // server/client clock skew correction (optional)
   const offsetRef = useRef(0);
   if (serverNow && offsetRef.current === 0) {
     offsetRef.current = Date.now() - serverNow;
@@ -51,7 +50,7 @@ export default function Countdown({
       timeoutRef.current = null;
       intervalRef.current = null;
     };
-  }, [target]); // re-init only when endTime changes
+  }, [target]); 
 
   return (
     <span className={className}>

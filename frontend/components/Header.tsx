@@ -49,15 +49,21 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Hide search + auth buttons on auth pages
+  const isAuthPage =
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/signup') ||
+    pathname?.startsWith('/forgot-password') ||
+    pathname?.startsWith('/reset-password');
+
   const [user, setUser] = useState<User | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const me = await authService.getCurrentUser(); // JSON from /auth/me/
+        const me = await authService.getCurrentUser();
 
-        // ----- ROBUST MAPPING (handles many shapes) -----
         const username =
           me?.username ??
           me?.user?.username ??
@@ -80,23 +86,20 @@ export default function Header() {
         if (!cancelled) setUser(null);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [pathname]);
 
   const onLogout = async () => {
-  try {
-    // force-refresh csrftoken cookie just before a state-changing POST
-    await apiClient.get('/auth/csrf/');
-    await authService.logout(); // POST auth/logout/
-  } catch (e) {
-    console.error('Logout failed:', e);
-  } finally {
-    setUser(null);
-    router.push('/');
-  }
-};
+    try {
+      await apiClient.get('/auth/csrf/');
+      await authService.logout();
+    } catch (e) {
+      console.error('Logout failed:', e);
+    } finally {
+      setUser(null);
+      router.push('/');
+    }
+  };
 
   const initial = firstInitial(user?.first_name, user?.username);
   const displayName = user?.first_name || user?.username || '';
@@ -105,36 +108,42 @@ export default function Header() {
     <header className="flex items-center justify-between gap-4 p-4 border-b">
       <Link href="/" className="font-semibold text-lg">KickBay</Link>
 
-      <Suspense fallback={<div className="w-full max-w-xl h-10" />}>
-        <SearchBoxInner />
-      </Suspense>
+      {/* hide the search box on auth pages */}
+      {!isAuthPage && (
+        <Suspense fallback={<div className="w-full max-w-xl h-10" />}>
+          <SearchBoxInner />
+        </Suspense>
+      )}
 
-      <nav className="flex items-center gap-3">
-        {user === undefined ? (
-          <div className="w-20 h-6" />
-        ) : user ? (
-          <div className="flex items-center gap-3">
-            <Link
-  href={`/profile/${encodeURIComponent(user.username)}`}
-  prefetch={false}
-  className="flex items-center gap-2"
->
-  <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-base">
-    {initial}
-  </div>
-  <span className="hidden sm:inline">{displayName}</span>
-</Link>
-            <button onClick={onLogout} className="underline text-sm" type="button">
-              Log out
-            </button>
-          </div>
-        ) : (
-          <>
-            <Link href="/login" className="underline">Sign in</Link>
-            <Link href="/signup" className="underline">Sign up</Link>
-          </>
-        )}
-      </nav>
+      {/* hide the right-side auth / user block on auth pages */}
+      {!isAuthPage && (
+        <nav className="flex items-center gap-3">
+          {user === undefined ? (
+            <div className="w-20 h-6" />
+          ) : user ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/profile/${encodeURIComponent(user.username)}`}
+                prefetch={false}
+                className="flex items-center gap-2"
+              >
+                <div className="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center text-base">
+                  {initial}
+                </div>
+                <span className="hidden sm:inline">{displayName}</span>
+              </Link>
+              <button onClick={onLogout} className="underline text-sm" type="button">
+                Log out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="underline">Sign in</Link>
+              <Link href="/signup" className="underline">Sign up</Link>
+            </>
+          )}
+        </nav>
+      )}
     </header>
   );
 }
