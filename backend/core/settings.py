@@ -12,8 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev_not_for_prod")
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
-CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
-
+CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o] or [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://host.docker.internal:3000",  # handy on Docker for Mac/Win
+    "https://donney.ddns.net",           # include your deployed frontend if you use it
+]
 # --- Apps ---
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -11,8 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        {/* server-rendered header, no flicker */}
         <Header />
-        <main className="min-h-screen">{children}</main>
+        {children}
       </body>
     </html>
   );

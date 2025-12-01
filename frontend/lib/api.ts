@@ -56,43 +56,53 @@ class ApiClient {
   }
 
   async post(endpoint: string, body: any) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    const csrfToken = await this.getCSRFToken();
-    
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    });
+  const clean = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  const csrfToken = await this.getCSRFToken();   // ensures cookie+token
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw data;
-    }
+  const res = await fetch(`${API_BASE}/${clean}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken,            // Django expects this
+    },
+    body: JSON.stringify(body ?? {}),
+  });
 
-    return data;
+  // tolerate 204/empty; still parse if there is text
+  const text = await res.text();
+  let data: any = null;
+  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+
+  if (!res.ok) {
+    const msg =
+      (data && (data.detail || data.error || data.message)) ||
+      `Request failed with ${res.status}`;
+    throw new Error(msg);
   }
+  return data; // may be null for logout
+}
 
   async get(endpoint: string) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    
-    const response = await fetch(`${API_BASE}/${cleanEndpoint}`, {
-      credentials: 'include',
-    });
+  const clean = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw data;
-    }
+  const res = await fetch(`${API_BASE}/${clean}`, {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' },
+  });
 
-    return data;
+  const text = await res.text();
+  let data: any = null;
+  if (text) { try { data = JSON.parse(text); } catch { data = text; } }
+
+  if (!res.ok) {
+    const msg =
+      (data && (data.detail || data.error || data.message)) ||
+      `Request failed with ${res.status}`;
+    throw new Error(msg);
   }
+  return data;
+}
 }
 
 export const apiClient = new ApiClient();
