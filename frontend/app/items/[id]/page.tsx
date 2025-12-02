@@ -252,10 +252,9 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   // Check if current user is the winner
   const isWinner =
-    user &&
+    !!user &&
     item.current_bidder_username === user.username &&
-    isAuctionEnded &&
-    isDutchEnded;
+    isAuctionEnded;
 
   // Reverse bid history to show latest first
   const reversedBidHistory = [...item.bid_history].reverse();
