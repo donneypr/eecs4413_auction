@@ -24,7 +24,7 @@ data:
 
   # Frontend:
   # Browser requests should go to the same domain, ingress will route /api to backend
-  NEXT_PUBLIC_API_BASE: "/api"
+  NEXT_PUBLIC_API_BASE: "https://donney.ddns.net"
   # Server-side (SSR) fetches from Next.js container to Django inside cluster:
   API_BASE_INTERNAL: "http://backend-svc:8000"
   FRONTEND_BASE_URL: "https://donney.ddns.net"
