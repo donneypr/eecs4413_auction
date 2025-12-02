@@ -99,7 +99,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   // Check if user has paid for this item
   const checkPaymentStatus = async () => {
-    const base = process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
+    const base = (process.env.NEXT_PUBLIC_API_BASE ?? '/api').replace(/\/$/, '');
+    //process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
     if (!user) return;
 
     try {
@@ -148,7 +149,8 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   // Handle bid submission
   const handlePlaceBid = async () => {
-    const base = process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
+    const base = (process.env.NEXT_PUBLIC_API_BASE ?? '/api').replace(/\/$/, '');
+    //process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
     // For Dutch auctions, use current price. For Forward auctions, use user input
     const isDutch = item?.auction_type === 'DUTCH';
     const finalBidAmount = isDutch
