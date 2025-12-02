@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-
 import styles from './page.module.css';
-
 import { itemsApi } from '@/lib/api';
 import Countdown from '@/components/Countdown';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from 'app/contexts/AuthContext';
 
 interface Image {
   data: string;
@@ -22,39 +23,136 @@ interface Item {
   starting_price: string;
   current_price: string;
   seller_username: string;
+  seller_id: number;
   current_bidder_username: string | null;
   is_active: boolean;
   end_time: string;
   created_at: string;
-  bid_history: Array<{ bidder: string; amount: string; timestamp: string }>;
+  bid_history: Array<{ username: string; amount: string; timestamp: string }>;
   auction_status: string;
   remaining_time: string;
+  auction_type: string;
+}
+
+// Helper function to get CSRF token from cookies
+function getCsrfToken(): string | null {
+  const name = 'csrftoken';
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.trim().split('=');
+    if (cookieName === name) {
+      return decodeURIComponent(cookieValue);
+    }
+  }
+  return null;
+}
+
+// Helper function to format timestamp
+function formatTimestamp(isoString: string): string {
+  const date = new Date(isoString);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+  return `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
 }
 
 export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
 
-  useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        const data = await itemsApi.getItem(parseInt(resolvedParams.id));
-        setItem(data);
-        setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load item');
-        setLoading(false);
-      }
-    };
+  // Bidding states
+  const [bidAmount, setBidAmount] = useState<string>('');
+  const [bidding, setBidding] = useState(false);
+  const [bidError, setBidError] = useState<string | null>(null);
+  const [bidSuccess, setBidSuccess] = useState(false);
 
+  // Bid history display state
+  const [showAllBids, setShowAllBids] = useState(false);
+
+  // Fetch item data
+  const fetchItem = async () => {
+    try {
+      const data = await itemsApi.getItem(parseInt(resolvedParams.id));
+      setItem(data);
+      setLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load item');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchItem();
   }, [resolvedParams.id]);
 
-  if (loading) {
+  // Handle bid submission
+  const handlePlaceBid = async () => {
+    // For Dutch auctions, use current price. For Forward auctions, use user input
+    const isDutch = item?.auction_type === 'DUTCH';
+    const finalBidAmount = isDutch ? parseFloat(item.current_price) : parseFloat(bidAmount);
+
+    if (!isDutch && (!bidAmount || finalBidAmount <= 0)) {
+      setBidError('Please enter a valid bid amount');
+      return;
+    }
+
+    setBidding(true);
+    setBidError(null);
+    setBidSuccess(false);
+
+    try {
+      const csrfToken = getCsrfToken();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/items/${item?.id}/bid/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
+        body: JSON.stringify({
+          bid_amount: finalBidAmount
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setBidError(data.error || 'Failed to place bid');
+        if (data.minimum_bid) {
+          setBidError(`${data.error}. Minimum bid: $${data.minimum_bid.toFixed(2)}`);
+        }
+        setBidding(false);
+        return;
+      }
+
+      // Success! Update item with new data
+      setBidSuccess(true);
+      setBidAmount('');
+      setItem(data.item);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setBidSuccess(false), 3000);
+
+    } catch (err) {
+      setBidError(err instanceof Error ? err.message : 'Failed to place bid');
+    } finally {
+      setBidding(false);
+    }
+  };
+
+  if (loading || authLoading) {
     return (
       <div className={styles.loadingContainer}>
         <p className={styles.loadingText}>Loading item...</p>
@@ -80,6 +178,20 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev === sortedImages.length - 1 ? 0 : prev + 1));
   };
+
+  // Check if user can bid
+  const canBid = user && item.is_active && user.id !== item.seller_id;
+  const isAuctionEnded = !item.is_active || new Date(item.end_time) < new Date();
+  const isDutchAuction = item.auction_type === 'DUTCH';
+  // Dutch auction ends immediately after first bid
+  const isDutchEnded = isDutchAuction && item.current_bidder_username !== null;
+  // Check if current user is the winner
+  const isWinner = user && item.current_bidder_username === user.username && (isAuctionEnded || isDutchEnded);
+
+  // Reverse bid history to show latest first
+  const reversedBidHistory = [...item.bid_history].reverse();
+  const displayedBids = showAllBids ? reversedBidHistory : reversedBidHistory.slice(0, 5);
+  const hasMoreBids = item.bid_history.length > 5;
 
   return (
     <div className={styles.maxWidth}>
@@ -148,10 +260,17 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             <div className={styles.priceDisplay}>${parseFloat(item.current_price).toFixed(2)}</div>
 
             {/* Status */}
-            <div className={styles.statusBadge}>{item.auction_status}</div>
+            <div className={styles.statusBadge}>
+              {isAuctionEnded || isDutchEnded ? 'ENDED' : item.auction_status}
+            </div>
 
             {/* Info Table */}
             <div className={styles.infoTable}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Auction Type:</span>
+                <span className={styles.infoValue}>{isDutchAuction ? 'Dutch' : 'Forward'}</span>
+              </div>
+
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Starting Price:</span>
                 <span className={styles.infoValue}>${parseFloat(item.starting_price).toFixed(2)}</span>
@@ -164,17 +283,19 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
               {item.current_bidder_username && (
                 <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Current Bidder:</span>
+                  <span className={styles.infoLabel}>
+                    {isAuctionEnded || isDutchEnded ? 'Winner:' : 'Current Bidder:'}
+                  </span>
                   <span className={styles.infoValue}>{item.current_bidder_username}</span>
                 </div>
               )}
 
               <div className={styles.infoRow}>
-  <span className={styles.infoLabel}>Time Remaining:</span>
-  <span className={`${styles.infoValue} ${styles.infoTime}`}>
-    <Countdown endTime={item.end_time} />
-  </span>
-</div>
+                <span className={styles.infoLabel}>Time Remaining:</span>
+                <span className={`${styles.infoValue} ${styles.infoTime}`}>
+                  {isAuctionEnded || isDutchEnded ? 'Auction Ended' : <Countdown endTime={item.end_time} />}
+                </span>
+              </div>
 
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>Created At:</span>
@@ -194,27 +315,123 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               )}
             </div>
 
-            {/* Bid Button */}
-            {item.is_active && (
-              <button className={styles.placeBidButton}>Place Bid</button>
+            {/* Bid Button with Auth Check */}
+            {!isAuctionEnded && !isDutchEnded ? (
+              <div className={styles.bidSection}>
+                <button 
+                  className={styles.placeBidButton}
+                  disabled={!user || user.id === item.seller_id || bidding}
+                  onClick={handlePlaceBid}
+                  style={{
+                    opacity: (!user || user.id === item.seller_id) ? 0.5 : 1,
+                    cursor: (!user || user.id === item.seller_id) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {bidding ? 'Placing Bid...' : isDutchAuction ? `Buy Now for $${parseFloat(item.current_price).toFixed(2)}` : 'Place Bid'}
+                </button>
+                
+                {/* Warning message for non-authenticated users */}
+                {!user && (
+                  <p className={styles.authWarning}>
+                    ⚠️ You must be logged in to place a bid
+                  </p>
+                )}
+
+                {/* Warning for seller */}
+                {user && user.id === item.seller_id && (
+                  <p className={styles.authWarning}>
+                    ⚠️ You cannot bid on your own item
+                  </p>
+                )}
+
+                {/* Bid input field - only show for FORWARD auctions if user can bid */}
+                {canBid && !isDutchAuction && (
+                  <div className={styles.bidInputContainer}>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Enter bid amount"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      className={styles.bidInput}
+                      disabled={bidding}
+                    />
+                  </div>
+                )}
+
+                {/* Dutch auction info */}
+                {canBid && isDutchAuction && (
+                  <p className={styles.dutchInfo}>
+                    💡 Click the button above to purchase at the current price
+                  </p>
+                )}
+
+                {/* Error and success messages */}
+                {bidError && (
+                  <p className={styles.bidError}>❌ {bidError}</p>
+                )}
+
+                {bidSuccess && (
+                  <p className={styles.bidSuccess}>✅ {isDutchAuction ? 'Purchase successful!' : 'Bid placed successfully!'}</p>
+                )}
+              </div>
+            ) : (
+              /* Show "Auction Ended" button and Pay Now for winner */
+              <div className={styles.bidSection}>
+                <button 
+                  className={styles.placeBidButton}
+                  disabled
+                  style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                >
+                  Auction Ended
+                </button>
+
+                {/* Show Pay Now button only for the winner */}
+                {isWinner && (
+                  <button 
+                    className={styles.payNowButton}
+                    onClick={() => router.push(`/payment/${item.id}`)}
+                  >
+                    💳 Pay Now
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Bid History */}
-      {item.bid_history.length > 0 && (
+      {/* Bid History - Only show for Forward auctions */}
+      {!isDutchAuction && item.bid_history.length > 0 && (
         <div className={styles.container}>
           <div className={styles.bidHistoryCard}>
             <h2 className={styles.bidHistoryTitle}>Bid History</h2>
             <div className={styles.bidHistoryList}>
-              {item.bid_history.map((bid, idx) => (
-                <div key={idx} className={styles.bidItem}>
-                  <span className={styles.bidderName}>{bid.bidder}</span>
-                  <span className={styles.bidAmount}>${bid.amount}</span>
-                </div>
-              ))}
+              {displayedBids.map((bid, idx) => {
+                // Calculate the actual bid number (reverse index)
+                const bidNumber = item.bid_history.length - (showAllBids ? idx : idx);
+                return (
+                  <div key={idx} className={styles.bidItem}>
+                    <span className={styles.bidHistoryText}>
+                      ${parseFloat(bid.amount).toFixed(2)} - {bid.username} - Bid #{bidNumber} - {formatTimestamp(bid.timestamp)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
+            
+            {/* Show more / Show less button */}
+            {hasMoreBids && (
+              <div className={styles.showMoreContainer}>
+                <span 
+                  className={styles.showMoreText}
+                  onClick={() => setShowAllBids(!showAllBids)}
+                >
+                  {showAllBids ? 'Show less' : 'Show more...'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}

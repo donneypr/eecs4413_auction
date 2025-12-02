@@ -17,6 +17,7 @@ from .models import UserProfile
 from .authentication import CsrfExemptSessionAuthentication
 import os
 from urllib.parse import urlencode
+from rest_framework.exceptions import ValidationError
 
 try:
     import pyotp
@@ -40,10 +41,28 @@ def csrf(_request):
 @permission_classes([AllowAny])
 def signup(_request):
     s = SignupSerializer(data=_request.data)
-    s.is_valid(raise_exception=True)
-    user = s.save()
-    return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
-
+    
+    try:
+        s.is_valid(raise_exception=True)
+        user = s.save()
+        return Response(
+            UserSerializer(user).data, 
+            status=status.HTTP_201_CREATED
+        )
+    except ValidationError as e:
+        # Format errors for frontend
+        # DRF returns errors as {"field": ["error msg"]} or {"field": "error msg"}
+        formatted_errors = {}
+        for field, errors in e.detail.items():
+            if isinstance(errors, list):
+                formatted_errors[field] = errors[0]  # Take first error message
+            else:
+                formatted_errors[field] = str(errors)
+        
+        return Response(
+            {'errors': formatted_errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 # Sign In (Session)
 try:

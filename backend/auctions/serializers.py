@@ -145,6 +145,15 @@ class CreateAuctionItemSerializer(serializers.ModelSerializer):
                 )
 
         return processed_images
+    
+    def validate_dutch_decrease_interval(self, value):
+        """Ensure interval is a positive integer"""
+        if value is not None:
+            if value <= 0:
+                raise serializers.ValidationError("Interval must be greater than 0")
+            if not isinstance(value, int):
+                raise serializers.ValidationError("Only whole numbers are accepted")
+        return value
 
     def validate(self, data):
         """Validate Dutch auction requirements"""

@@ -264,3 +264,7 @@
 .readOnly::placeholder {
   color: #9ca3af;
 }
+
+.inputError {
+  border-color: #dc2626 !important;
+}

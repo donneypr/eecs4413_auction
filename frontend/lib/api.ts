@@ -1,4 +1,3 @@
-// frontend/lib/api.ts
 const isServer = typeof window === 'undefined';
 
 export const API_BASE = isServer
@@ -25,6 +24,7 @@ class ApiClient {
       this.csrfToken = fromCookie;
       return fromCookie;
     }
+
     // 2) fetch from backend
     const res = await fetch(`${API_BASE}/auth/csrf/`, {
       method: 'GET',
@@ -45,18 +45,22 @@ class ApiClient {
 
   private async safeJson(res: Response): Promise<any> {
     const txt = await res.text();
-    if (!txt) return null;                // e.g. 204 No Content (logout)
-    try { return JSON.parse(txt); } catch { return txt; }
+    if (!txt) return null; // e.g., 204 No Content (logout)
+    try {
+      return JSON.parse(txt);
+    } catch {
+      return txt;
+    }
   }
 
-  private async request<T>(
+  private async request<T = any>(
     method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
     endpoint: string,
     body?: unknown
   ): Promise<T> {
     const clean = this.clean(endpoint);
-
     const headers: Record<string, string> = {};
+
     if (method === 'GET') {
       headers['Accept'] = 'application/json';
     } else {
@@ -75,18 +79,25 @@ class ApiClient {
     const data = await this.safeJson(res);
 
     if (!res.ok) {
-      const msg =
-        (data && (data.detail || data.error || data.message)) ||
-        `${res.status} ${res.statusText}`;
-      throw new Error(String(msg));
+      // ✅ FIXED: Throw the entire data object to preserve {errors: {...}}
+      throw data || { error: `${res.status} ${res.statusText}` };
     }
+
     return data as T;
   }
 
-  get<T = any>(endpoint: string)    { return this.request<T>('GET', endpoint); }
-  post<T = any>(endpoint: string, body?: unknown)  { return this.request<T>('POST', endpoint, body); }
-  patch<T = any>(endpoint: string, body?: unknown) { return this.request<T>('PATCH', endpoint, body); }
-  delete<T = any>(endpoint: string) { return this.request<T>('DELETE', endpoint); }
+  get<T = any>(endpoint: string) {
+    return this.request<T>('GET', endpoint);
+  }
+  post<T = any>(endpoint: string, body?: unknown) {
+    return this.request<T>('POST', endpoint, body);
+  }
+  patch<T = any>(endpoint: string, body?: unknown) {
+    return this.request<T>('PATCH', endpoint, body);
+  }
+  delete<T = any>(endpoint: string) {
+    return this.request<T>('DELETE', endpoint);
+  }
 }
 
 export const apiClient = new ApiClient();
@@ -94,15 +105,16 @@ export const apiClient = new ApiClient();
 
 export const userApi = {
   getItems: (username: string) => apiClient.get(`/users/${username}/items/`),
-  getBids:  (username: string) => apiClient.get(`/users/${username}/bids/`),
+  getBids: (username: string) => apiClient.get(`/users/${username}/bids/`),
 };
 
 export const itemsApi = {
-  getItem:   (itemId: number)        => apiClient.get(`/items/${itemId}/`),
-  listItems: ()                      => apiClient.get('/items/'),
-  createItem:(data: any)             => apiClient.post('/items/create/', data),
-  editItem:  (itemId: number, data: any) => apiClient.patch(`/items/${itemId}/edit/`, data),
-  deleteItem:(itemId: number)        => apiClient.delete(`/items/${itemId}/delete/`),
-  placeBid:  (itemId: number, amount: number) =>
-               apiClient.post(`/items/${itemId}/bid/`, { amount }),
+  getItem: (itemId: number) => apiClient.get(`/items/${itemId}/`),
+  listItems: () => apiClient.get('/items/'),
+  createItem: (data: any) => apiClient.post('/items/create/', data),
+  editItem: (itemId: number, data: any) =>
+    apiClient.patch(`/items/${itemId}/edit/`, data),
+  deleteItem: (itemId: number) => apiClient.delete(`/items/${itemId}/delete/`),
+  placeBid: (itemId: number, amount: number) =>
+    apiClient.post(`/items/${itemId}/bid/`, { amount }),
 };
