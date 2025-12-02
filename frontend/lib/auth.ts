@@ -20,18 +20,18 @@ export interface LoginData {
 
 export const authService = {
   async signup(data: SignupData) {
-    return apiClient.post('auth/signup/', data);  // No leading slash
+    return apiClient.post('auth/signup/', data);  
   },
 
   async login(data: LoginData) {
-    return apiClient.post('auth/login/', data);  // No leading slash
+    return apiClient.post('auth/login/', data); 
   },
 
   async logout() {
-    return apiClient.post('auth/logout/', {});  // No leading slash
+    return apiClient.post('auth/logout/', {}); 
   },
 
   async getCurrentUser() {
-    return apiClient.get('auth/me/');  // No leading slash
+    return apiClient.get('auth/me/');  
   },
 };

@@ -66,7 +66,7 @@ class ApiClient {
     } else {
       const csrf = await this.ensureCsrf();
       headers['Content-Type'] = 'application/json';
-      headers['X-CSRFToken'] = csrf; // Django expects this
+      headers['X-CSRFToken'] = csrf;     
     }
 
     const res = await fetch(`${API_BASE}/${clean}`, {
@@ -102,7 +102,7 @@ class ApiClient {
 
 export const apiClient = new ApiClient();
 
-// Optional convenience wrappers (match what you had in the PR)
+
 export const userApi = {
   getItems: (username: string) => apiClient.get(`/users/${username}/items/`),
   getBids: (username: string) => apiClient.get(`/users/${username}/bids/`),
