@@ -99,11 +99,12 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   // Check if user has paid for this item
   const checkPaymentStatus = async () => {
+    const base = process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
     if (!user) return;
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE}/payments/my-won-items/`,
+        `${base}/payments/my-won-items/`,
         {
           method: 'GET',
           credentials: 'include',
@@ -147,6 +148,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   // Handle bid submission
   const handlePlaceBid = async () => {
+    const base = process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE!;
     // For Dutch auctions, use current price. For Forward auctions, use user input
     const isDutch = item?.auction_type === 'DUTCH';
     const finalBidAmount = isDutch
@@ -165,7 +167,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     try {
       const csrfToken = getCsrfToken();
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE}/items/${item?.id}/bid/`,
+        `${base}/items/${item?.id}/bid/`,
         {
           method: 'POST',
           credentials: 'include',
