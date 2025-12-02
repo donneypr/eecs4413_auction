@@ -25,9 +25,14 @@ async function fetchItems(sp: SP) {
   if (type) params.set('type', type);
   params.set('page_size', '24');
 
-  const res = await fetch(`${base}/items/?${params.toString()}`, { cache: 'no-store' });
+  const res = await fetch(`${base}/items/?${params.toString()}`, {
+  cache: 'no-store',
+  credentials: 'include',  // this is for auth cookies
+  });
   const serverNow = Date.parse(res.headers.get('date') ?? new Date().toUTCString());
-  if (!res.ok) return { results: [], serverNow };
+  if (!res.ok) {
+  throw new Error(`Failed to fetch items: ${res.status}`);
+  }
   const data = await res.json();
   return { ...data, serverNow };
 }

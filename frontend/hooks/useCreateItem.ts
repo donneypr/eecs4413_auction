@@ -10,6 +10,8 @@ interface CreateItemData {
   auction_type: string;
   end_time: string;
   images_data?: string[];
+  dutch_decrease_percentage?: string;
+  dutch_decrease_interval?: number;
 }
 
 export function useCreateItem() {

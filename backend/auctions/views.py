@@ -1,3 +1,4 @@
+from xml.dom import ValidationErr
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -17,6 +18,7 @@ from django.contrib.auth.models import User
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def list_items(request):
+    _check_and_expire_auctions()
     """Display auctions with filtering and sorting"""
     qs = AuctionItem.objects.select_related('seller', 'current_bidder').all()
 
@@ -68,6 +70,7 @@ def list_items(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def search_items(request):
+    _check_and_expire_auctions()
     """Search items using keywords"""
     keyword = request.GET.get('keyword', '').strip()
     if not keyword:
@@ -195,19 +198,22 @@ def place_bid(request, item_id):
                 )
 
         # Place the bid
+        now = timezone.now()
         item.current_price = bid_amount
         item.current_bidder = request.user
         item.bid_history.append({
             "username": request.user.username,
             "amount": float(bid_amount),
-            "timestamp": timezone.now().isoformat()
+            "timestamp": now.isoformat()
         })
 
         # ending dutch auction after a bid has been placed on it
         if item.auction_type == 'DUTCH':
             item.is_active = False
-
-        item.save()
+            item.end_time = now        # set end_time to bid time so it ends the auction
+            item.save()
+        else:
+            item.save()
 
         return Response(
             {
@@ -406,12 +412,11 @@ def edit_item(request, item_id):
         # Update image order if provided
         if 'image_order' in request.data:
             new_order = request.data['image_order']
-            # Reorder images based on new_order array
+            if len(new_order) != len(item.images):
+                raise ValidationErr("Invalid image order")
             images = list(item.images)
-            reordered = [images[i] for i in new_order if i < len(images)]
-            for idx, img in enumerate(reordered):
-                img['order'] = idx
-            item.images = reordered
+            item.images = [images[i] for i in new_order]
+            item.save()
         
         item.save()
         
@@ -472,7 +477,7 @@ def _update_dutch_price(item):
         item.last_price_update = item.created_at
 
     now = timezone.now()
-    time_elapsed = (now - item.last_price_update).total_seconds() / 60  # in minutes
+    time_elapsed = (now - item.last_price_update).total_seconds() # in seconds
     intervals_passed = int(time_elapsed / item.dutch_decrease_interval)
 
     if intervals_passed > 0:
@@ -482,3 +487,11 @@ def _update_dutch_price(item):
         item.current_price = max(new_price, Decimal('0.01'))
         item.last_price_update = now
         item.save()
+
+def _check_and_expire_auctions():
+    """Mark all expired auctions as inactive"""
+    now = timezone.now()
+    AuctionItem.objects.filter(
+        is_active=True,
+        end_time__lte=now
+    ).update(is_active=False)

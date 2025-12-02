@@ -65,11 +65,6 @@ def signup(_request):
         )
 
 # Sign In (Session)
-try:
-    import pyotp
-except Exception:
-    pyotp = None
-
 @api_view(["POST"])
 @authentication_classes([CsrfExemptSessionAuthentication])
 @permission_classes([AllowAny])
@@ -108,12 +103,14 @@ def login_view(_request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def logout_view(_request):
     logout(_request)
     return Response({"ok": True})
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def me(_request):
     if not _request.user.is_authenticated:
         return Response({"authenticated": False})
