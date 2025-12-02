@@ -1,4 +1,7 @@
 initial commit
+
+Yar the Goat - Team Purple
+
 ----------------------------
 Initial Setup
 ----------------------------
