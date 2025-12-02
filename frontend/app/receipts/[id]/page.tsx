@@ -132,7 +132,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ id: string }
             </div>
 
             <div className={styles.descriptionBox}>
-              <h3 className={styles.boxTitle}>Item Description</h3>
+              <h3 className={styles.boxTitle}>Detailed Item Description</h3>
               <p className={styles.boxContent}>{item.description}</p>
             </div>
 
