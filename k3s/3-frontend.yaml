@@ -14,28 +14,28 @@ spec:
         app: auction-frontend
     spec:
       containers:
-      - name: frontend
-      image: ghcr.io/donneypr/eecs4413_auction-frontend:latest
-      imagePullPolicy: Always
-      ports:
-        - containerPort: 3000
-      env:
-          - name: TZ
-            valueFrom:
-              configMapKeyRef:
-                name: auction-app-config
-                key: TZ
-          - name: NEXT_PUBLIC_API_BASE
-            valueFrom:
-              configMapKeyRef:
-                name: auction-app-config
-                key: NEXT_PUBLIC_API_BASE
-          - name: API_BASE_INTERNAL
-            valueFrom:
-              configMapKeyRef:
-                name: auction-app-config
-                key: API_BASE_INTERNAL
-      readinessProbe:
+        - name: frontend
+          image: ghcr.io/donneypr/eecs4413_auction-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: TZ
+            - name: NEXT_PUBLIC_API_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: NEXT_PUBLIC_API_BASE
+            - name: API_BASE_INTERNAL
+              valueFrom:
+                configMapKeyRef:
+                  name: auction-app-config
+                  key: API_BASE_INTERNAL
+          readinessProbe:
             httpGet:
               path: /
               port: 3000
