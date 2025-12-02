@@ -71,7 +71,7 @@ export default async function HomePage({
         <select name="sort" defaultValue={sort} className="border rounded px-2 py-2">
           <option value="ending_soon">Ending soon</option>
           <option value="newest">Newest</option>
-          <option value="price_asc">Price: Lo → High</option>
+          <option value="price_asc">Price: Low → High</option>
           <option value="price_desc">Price: High → Low</option>
         </select>
 
