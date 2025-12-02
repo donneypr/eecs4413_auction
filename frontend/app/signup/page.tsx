@@ -137,25 +137,73 @@ export default function SignupPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Client-side validation
-    if (!validateForm()) {
-      return;
-    }
+  e.preventDefault();
+  
+  // Clear previous errors
+  setValidationErrors({});
+  setErrors({});
+  
+  // Client-side validation
+  if (!validateForm()) {
+    return;
+  }
 
-    setLoading(true);
-    setErrors({});
+  // ✅ NEW: Validate address fields
+  const addressErrors: any = {};
+  if (!formData.street_number) {
+    addressErrors.street_number = 'Please select an address from the search suggestions';
+  }
+  if (!formData.street_name) {
+    addressErrors.street_name = 'Please select an address from the search suggestions';
+  }
+  if (!formData.city) {
+    addressErrors.city = 'Please select an address from the search suggestions';
+  }
+  if (!formData.country) {
+    addressErrors.country = 'Please select an address from the search suggestions';
+  }
+  if (!formData.postal_code) {
+    addressErrors.postal_code = 'Please select an address from the search suggestions';
+  }
 
-    try {
-      await authService.signup(formData);
-      router.push('/login?registered=true');
-    } catch (error: any) {
-      setErrors(error);
-    } finally {
-      setLoading(false);
+  if (Object.keys(addressErrors).length > 0) {
+    setValidationErrors(addressErrors);
+    // Scroll to address section
+    document.getElementById('street_number')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    await authService.signup(formData);
+    router.push('/login?registered=true');
+  } catch (error: any) {
+    // Handle backend errors in format {errors: {field: "message"}}
+    if (error.errors) {
+      // Backend returns field-specific errors
+      const backendErrors: any = {};
+      Object.keys(error.errors).forEach((key) => {
+        const errorValue = error.errors[key];
+        // Handle both string and array formats
+        backendErrors[key] = Array.isArray(errorValue) ? errorValue[0] : errorValue;
+      });
+      setErrors(backendErrors);
+      
+      // Scroll to first error field
+      const firstErrorField = Object.keys(backendErrors)[0];
+      document.getElementById(firstErrorField)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (error.error) {
+      // General error message
+      setErrors({ general: error.error });
+    } else {
+      // Fallback error
+      setErrors({ general: 'Signup failed. Please try again.' });
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isLoaded) {
     return (
@@ -182,6 +230,13 @@ export default function SignupPage() {
 
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formSections}>
+            {/* General Error Message */}
+            {errors.general && (
+              <div className={styles.errorMessage}>
+                <p className={styles.errorText}>{errors.general}</p>
+              </div>
+            )}
+
             {/* Account Information */}
             <div className={styles.gridTwo}>
               <div className={styles.fieldGroup}>
@@ -196,7 +251,7 @@ export default function SignupPage() {
                     required
                     value={formData.username}
                     onChange={handleChange}
-                    className={styles.input}
+                    className={`${styles.input} ${(validationErrors.username || errors.username) ? styles.inputError : ''}`}
                     maxLength={16}
                   />
                   {showMaxLengthTooltip === 'username' && (
@@ -207,7 +262,7 @@ export default function SignupPage() {
                 </div>
                 {(validationErrors.username || errors.username) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.username || errors.username?.[0]}
+                    {validationErrors.username || errors.username}
                   </p>
                 )}
               </div>
@@ -223,11 +278,11 @@ export default function SignupPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className={styles.input}
+                  className={`${styles.input} ${(validationErrors.email || errors.email) ? styles.inputError : ''}`}
                 />
                 {(validationErrors.email || errors.email) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.email || errors.email?.[0]}
+                    {validationErrors.email || errors.email}
                   </p>
                 )}
               </div>
@@ -247,7 +302,7 @@ export default function SignupPage() {
                     required
                     value={formData.first_name}
                     onChange={handleChange}
-                    className={styles.input}
+                    className={`${styles.input} ${(validationErrors.first_name || errors.first_name) ? styles.inputError : ''}`}
                     maxLength={32}
                   />
                   {showMaxLengthTooltip === 'first_name' && (
@@ -258,7 +313,7 @@ export default function SignupPage() {
                 </div>
                 {(validationErrors.first_name || errors.first_name) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.first_name || errors.first_name?.[0]}
+                    {validationErrors.first_name || errors.first_name}
                   </p>
                 )}
               </div>
@@ -275,7 +330,7 @@ export default function SignupPage() {
                     required
                     value={formData.last_name}
                     onChange={handleChange}
-                    className={styles.input}
+                    className={`${styles.input} ${(validationErrors.last_name || errors.last_name) ? styles.inputError : ''}`}
                     maxLength={32}
                   />
                   {showMaxLengthTooltip === 'last_name' && (
@@ -286,7 +341,7 @@ export default function SignupPage() {
                 </div>
                 {(validationErrors.last_name || errors.last_name) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.last_name || errors.last_name?.[0]}
+                    {validationErrors.last_name || errors.last_name}
                   </p>
                 )}
               </div>
@@ -308,7 +363,7 @@ export default function SignupPage() {
                     onChange={handleChange}
                     onFocus={() => setShowPasswordRequirements(true)}
                     onBlur={() => setTimeout(() => setShowPasswordRequirements(false), 200)}
-                    className={styles.input}
+                    className={`${styles.input} ${(validationErrors.password || errors.password) ? styles.inputError : ''}`}
                   />
                   {showPasswordRequirements && (
                     <div className={styles.passwordRequirements}>
@@ -334,7 +389,7 @@ export default function SignupPage() {
                 </div>
                 {(validationErrors.password || errors.password) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.password || errors.password?.[0]}
+                    {validationErrors.password || errors.password}
                   </p>
                 )}
               </div>
@@ -350,11 +405,11 @@ export default function SignupPage() {
                   required
                   value={formData.password2}
                   onChange={handleChange}
-                  className={styles.input}
+                  className={`${styles.input} ${(validationErrors.password2 || errors.password2) ? styles.inputError : ''}`}
                 />
                 {(validationErrors.password2 || errors.password2) && (
                   <p className={styles.fieldError}>
-                    {validationErrors.password2 || errors.password2?.[0]}
+                    {validationErrors.password2 || errors.password2}
                   </p>
                 )}
               </div>
@@ -366,7 +421,7 @@ export default function SignupPage() {
               
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>
-                  Search Address
+                  Search Address *
                 </label>
                 <AddressAutocomplete onAddressSelect={handleAddressSelect} />
                 <p className={styles.helperText}>Start typing your address for suggestions</p>
@@ -384,9 +439,14 @@ export default function SignupPage() {
                     required
                     value={formData.street_number}
                     readOnly
-                    className={`${styles.input} ${styles.readOnly}`}
+                    className={`${styles.input} ${styles.readOnly} ${(validationErrors.street_number || errors.street_number) ? styles.inputError : ''}`}
                     placeholder="Auto-filled from search"
                   />
+                  {(validationErrors.street_number || errors.street_number) && (
+                    <p className={styles.fieldError}>
+                      {validationErrors.street_number || errors.street_number}
+                    </p>
+                  )}
                 </div>
 
                 <div className={styles.fieldGroup}>
@@ -400,9 +460,14 @@ export default function SignupPage() {
                     required
                     value={formData.street_name}
                     readOnly
-                    className={`${styles.input} ${styles.readOnly}`}
+                    className={`${styles.input} ${styles.readOnly} ${(validationErrors.street_name || errors.street_name) ? styles.inputError : ''}`}
                     placeholder="Auto-filled from search"
                   />
+                  {(validationErrors.street_name || errors.street_name) && (
+                    <p className={styles.fieldError}>
+                      {validationErrors.street_name || errors.street_name}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -418,9 +483,14 @@ export default function SignupPage() {
                     required
                     value={formData.city}
                     readOnly
-                    className={`${styles.input} ${styles.readOnly}`}
+                    className={`${styles.input} ${styles.readOnly} ${(validationErrors.city || errors.city) ? styles.inputError : ''}`}
                     placeholder="Auto-filled from search"
                   />
+                  {(validationErrors.city || errors.city) && (
+                    <p className={styles.fieldError}>
+                      {validationErrors.city || errors.city}
+                    </p>
+                  )}
                 </div>
 
                 <div className={styles.fieldGroup}>
@@ -434,9 +504,14 @@ export default function SignupPage() {
                     required
                     value={formData.country}
                     readOnly
-                    className={`${styles.input} ${styles.readOnly}`}
+                    className={`${styles.input} ${styles.readOnly} ${(validationErrors.country || errors.country) ? styles.inputError : ''}`}
                     placeholder="Auto-filled from search"
                   />
+                  {(validationErrors.country || errors.country) && (
+                    <p className={styles.fieldError}>
+                      {validationErrors.country || errors.country}
+                    </p>
+                  )}
                 </div>
 
                 <div className={styles.fieldGroup}>
@@ -450,19 +525,19 @@ export default function SignupPage() {
                     required
                     value={formData.postal_code}
                     readOnly
-                    className={`${styles.input} ${styles.readOnly}`}
+                    className={`${styles.input} ${styles.readOnly} ${(validationErrors.postal_code || errors.postal_code) ? styles.inputError : ''}`}
                     placeholder="Auto-filled from search"
                   />
+                  {(validationErrors.postal_code || errors.postal_code) && (
+                    <p className={styles.fieldError}>
+                      {validationErrors.postal_code || errors.postal_code}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
 
-          {errors.non_field_errors && (
-            <div className={styles.errorMessage}>
-              <p className={styles.errorText}>{errors.non_field_errors[0]}</p>
-            </div>
-          )}
+          </div>
 
           <button type="submit" disabled={loading} className={styles.submitButton}>
             {loading ? 'Creating account...' : 'Sign up'}

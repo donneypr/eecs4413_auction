@@ -91,7 +91,7 @@ def search_items(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_item_details(request, item_id):
     """Get full item details"""
     try:
@@ -202,6 +202,11 @@ def place_bid(request, item_id):
             "amount": float(bid_amount),
             "timestamp": timezone.now().isoformat()
         })
+
+        # ending dutch auction after a bid has been placed on it
+        if item.auction_type == 'DUTCH':
+            item.is_active = False
+
         item.save()
 
         return Response(
@@ -220,7 +225,7 @@ def place_bid(request, item_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_current_price(request, item_id):
     """Real-time price updates for frontend polling"""
     try:

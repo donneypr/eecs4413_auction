@@ -1,0 +1,242 @@
+.container {
+  max-width: 650px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.paymentCard {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #24292e;
+  text-align: center;
+}
+
+.orderSummary {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.orderSummary h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #24292e;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e1e4e8;
+  font-size: 15px;
+  color: rgb(0, 0, 0);
+}
+
+.summaryRow:last-child {
+  border-bottom: none;
+}
+
+.itemName {
+  font-weight: 600;
+  color: #0366d6;
+}
+
+.amount {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.totalRow {
+  margin-top: 10px;
+  padding-top: 15px;
+  border-top: 2px solid #d1d5da !important;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.totalAmount {
+  color: #000000;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Shipping Section */
+.shippingSection {
+  margin-bottom: 25px;
+}
+
+.shippingSection h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #24292e;
+}
+
+.shippingOption {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  border: 2px solid #e1e4e8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.shippingOption:hover {
+  border-color: #0366d6;
+  background: #f6f8fa;
+}
+
+.shippingOption input[type="radio"]:checked + .shippingDetails {
+  font-weight: 600;
+}
+
+.shippingOption:has(input:checked) {
+  border-color: #0366d6;
+  background: #f1f8ff;
+}
+
+.radioInput {
+  margin-right: 12px;
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.shippingDetails {
+  flex: 1;
+}
+
+.shippingTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #24292e;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shippingDesc {
+  font-size: 14px;
+  color: #586069;
+}
+
+.badge {
+  background: #28a745;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgeBlue {
+  background: #0366d6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Form Styles */
+.form h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #24292e;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.formRow {
+  display: flex;
+  gap: 15px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #24292e;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e1e4e8;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #0366d6;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 10px;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #586069;
+  border: 2px solid #e1e4e8;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelButton:hover {
+  background: #f6f8fa;
+  border-color: #d1d5da;
+}
+
+.error {
+  color: #d73a49;
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+}

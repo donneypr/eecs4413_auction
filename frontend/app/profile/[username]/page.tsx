@@ -5,7 +5,23 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
 import { userApi, itemsApi } from '@/lib/api';
-import type { AuctionItem } from '@/lib/types';
+
+interface AuctionItem {
+  id: number;
+  name: string;
+  description: string;
+  starting_price: string;
+  current_price: string;
+  seller_username: string;
+  current_bidder_username: string | null;
+  is_active: boolean;
+  images: Array<{
+    data: string;
+    format: string;
+    order: number;
+  }>;
+  thumbnail: string;
+}
 
 interface BidItem extends AuctionItem {
   remaining_time: string;
@@ -13,8 +29,10 @@ interface BidItem extends AuctionItem {
 }
 
 export default function ProfilePage() {
-  const { username } = useParams<{ username: string }>();   // <-- from URL
-  const [activeTab, setActiveTab] = useState<'items' | 'bids'>('items');
+  const params = useParams();
+  const username = params.username as string;
+
+  const [activeTab, setActiveTab] = useState<'items' | 'bids' | 'wins'>('items');
   const [items, setItems] = useState<AuctionItem[]>([]);
   const [bids, setBids] = useState<BidItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +40,16 @@ export default function ProfilePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
-  async function fetchData(uname: string) {
+  useEffect(() => {
+    fetchData();
+  }, [username]);
+
+  const fetchData = async () => {
     try {
       setLoading(true);
       const [itemsData, bidsData] = await Promise.all([
-        userApi.getItems(uname),
-        userApi.getBids(uname),
+        userApi.getItems(username),
+        userApi.getBids(username),
       ]);
       setItems(itemsData);
       setBids(bidsData as BidItem[]);
@@ -37,13 +59,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    if (typeof username === 'string' && username) {
-      fetchData(username);
-    }
-  }, [username]);
+  };
 
   const handleDeleteItem = async (itemId: number) => {
     try {
@@ -55,60 +71,69 @@ export default function ProfilePage() {
     }
   };
 
-  const ItemCard = ({ item, isBid = false }: { item: AuctionItem | BidItem; isBid?: boolean }) => (
-    <div className={styles.itemCard}>
-      <Link href={`/items/${item.id}`}>
-        <div className={styles.itemImage}>
-          {item.thumbnail ? (
-            <img src={item.thumbnail} alt={item.name} className={styles.itemImageImg} />
-          ) : (
-            <div className={styles.loadingText}>No image</div>
-          )}
-          <span
-            className={`${styles.statusBadge} ${
-              item.is_active ? styles.statusActive : styles.statusEnded
-            }`}
-          >
-            {item.is_active ? 'Active' : 'Ended'}
-          </span>
-        </div>
-      </Link>
-
-      <div className={styles.itemContent}>
+  const ItemCard = ({ item, isBid = false }: { item: AuctionItem | BidItem; isBid?: boolean }) => {
+    return (
+      <div className={styles.itemCard}>
         <Link href={`/items/${item.id}`}>
-          <h3 className={styles.itemName}>{item.name}</h3>
+          <div className={styles.itemImage}>
+            {item.thumbnail ? (
+              <img src={item.thumbnail} alt={item.name} className={styles.itemImageImg} />
+            ) : (
+              <div className={styles.loadingText}>No image</div>
+            )}
+            <span
+              className={`${styles.statusBadge} ${
+                item.is_active ? styles.statusActive : styles.statusEnded
+              }`}
+            >
+              {item.is_active ? 'Active' : 'Ended'}
+            </span>
+          </div>
         </Link>
 
-        <div className={styles.priceSection}>
-          <span className={styles.priceLabel}>Price:</span>
-          <span className={styles.price}>${parseFloat(item.current_price).toFixed(2)}</span>
+        <div className={styles.itemContent}>
+          <Link href={`/items/${item.id}`}>
+            <h3 className={styles.itemName}>{item.name}</h3>
+          </Link>
+
+          <div className={styles.priceSection}>
+            <span className={styles.priceLabel}>Price:</span>
+            <span className={styles.price}>${parseFloat(item.current_price).toFixed(2)}</span>
+          </div>
+
+          {isBid && 'remaining_time' in item && (
+            <div className={styles.timeSection}>
+              <span className={styles.timeLabel}>Time Left:</span>
+              <span className={styles.timeValue}>{item.remaining_time}</span>
+            </div>
+          )}
+
+          {!isBid && (
+            <div className={styles.actions}>
+              <button
+                onClick={() => setEditingId(item.id)}
+                className={styles.editButton}
+              >
+                Edit
+              </button>
+
+              <div className={styles.menuContainer}>
+                <button className={styles.menuButton}>⋮</button>
+                <div className={styles.menuDropdown}>
+                  <button
+                    onClick={() => setDeleteConfirmId(item.id)}
+                    className={styles.deleteOption}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
-        {isBid && 'remaining_time' in item && (
-          <div className={styles.timeSection}>
-            <span className={styles.timeLabel}>Time Left:</span>
-            <span className={styles.timeValue}>{item.remaining_time}</span>
-          </div>
-        )}
-
-        {!isBid && (
-          <div className={styles.actions}>
-            <button onClick={() => setEditingId(item.id)} className={styles.editButton}>
-              Edit
-            </button>
-            <button
-              onClick={() => setDeleteConfirmId(item.id)}
-              className={styles.deleteButton}
-              title="Delete item"
-              aria-label="Delete item"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!username || loading) {
     return (
@@ -120,11 +145,16 @@ export default function ProfilePage() {
     );
   }
 
+  // Compute wins: ended + current_bidder_username == username
+  const wins = bids.filter(
+    (bid) => !bid.is_active && bid.current_bidder_username === username
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.maxWidth}>
         <div className={styles.header}>
-          <h1 className={styles.title}>{username}&apos;s Profile</h1>
+          <h1 className={styles.title}>{username}'s Profile</h1>
           <p className={styles.subtitle}>View your items and bids</p>
         </div>
 
@@ -144,14 +174,20 @@ export default function ProfilePage() {
           >
             My Bids ({bids.length})
           </button>
+          <button
+            onClick={() => setActiveTab('wins')}
+            className={`${styles.tab} ${activeTab === 'wins' ? styles.active : ''}`}
+          >
+            My Wins ({wins.length})
+          </button>
         </div>
 
         {/* Content */}
-        {activeTab === 'items' ? (
+        {activeTab === 'items' && (
           <div>
             {items.length === 0 ? (
               <div className={styles.emptyState}>
-                <p className={styles.emptyText}>You haven&apos;t listed any items yet.</p>
+                <p className={styles.emptyText}>You haven't listed any items yet.</p>
               </div>
             ) : (
               <div className={styles.grid}>
@@ -161,11 +197,13 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'bids' && (
           <div>
             {bids.length === 0 ? (
               <div className={styles.emptyState}>
-                <p className={styles.emptyText}>You haven&apos;t placed any bids yet.</p>
+                <p className={styles.emptyText}>You haven't placed any bids yet.</p>
               </div>
             ) : (
               <div className={styles.grid}>
@@ -176,53 +214,68 @@ export default function ProfilePage() {
             )}
           </div>
         )}
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirmId !== null && (
-        <div className={styles.modal}>
-          <div className={styles.modalContent}>
-            <h2 className={styles.modalTitle}>Delete Item?</h2>
-            <p className={styles.confirmMessage}>
-              Are you sure you want to delete this item?
-            </p>
-            <p className={styles.confirmWarning}>
-              This action cannot be undone.
-            </p>
-            <div className={styles.confirmButtons}>
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className={styles.confirmCancel}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteItem(deleteConfirmId)}
-                className={styles.confirmDelete}
-              >
-                Delete
-              </button>
+        {activeTab === 'wins' && (
+          <div>
+            {wins.length === 0 ? (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyText}>You haven't won any items yet.</p>
+              </div>
+            ) : (
+              <div className={styles.grid}>
+                {wins.map((bid) => (
+                  <ItemCard key={bid.id} item={bid} isBid={true} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirmId !== null && (
+          <div className={styles.modal}>
+            <div className={styles.modalContent}>
+              <h2 className={styles.modalTitle}>Delete Item?</h2>
+              <p className={styles.confirmMessage}>
+                Are you sure you want to delete this item?
+              </p>
+              <p className={styles.confirmWarning}>
+                This action cannot be undone.
+              </p>
+              <div className={styles.confirmButtons}>
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className={styles.confirmCancel}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteItem(deleteConfirmId)}
+                  className={styles.confirmDelete}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Edit Modal */}
-      {editingId !== null && (
-        <EditItemModal
-          itemId={editingId}
-          onClose={() => setEditingId(null)}
-          onSuccess={() => {
-            setEditingId(null);
-            fetchData(username);
-          }}
-        />
-      )}
+        {/* Edit Modal */}
+        {editingId !== null && (
+          <EditItemModal
+            itemId={editingId}
+            onClose={() => setEditingId(null)}
+            onSuccess={() => {
+              setEditingId(null);
+              fetchData();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
-// Edit Item Modal Component
 function EditItemModal({
   itemId,
   onClose,
@@ -235,7 +288,9 @@ function EditItemModal({
   const [item, setItem] = useState<AuctionItem | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [images, setImages] = useState<Array<{ data: string; format: string; order: number }>>([]);
+  const [images, setImages] = useState<
+    Array<{ data: string; format: string; order: number }>
+  >([]);
   const [imageOrder, setImageOrder] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -249,9 +304,12 @@ function EditItemModal({
         setItem(data);
         setName(data.name);
         setDescription(data.description);
-        const sortedImages = data.images.sort((a: any, b: any) => a.order - b.order);
+        const sortedImages = data.images.sort(
+          (a: any, b: any) => a.order - b.order
+        );
         setImages(sortedImages);
         setImageOrder(sortedImages.map((_: any, i: number) => i));
+        setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load item');
       } finally {
@@ -272,9 +330,14 @@ function EditItemModal({
     try {
       setSaving(true);
       const payload: any = { name, description };
-      if (JSON.stringify(imageOrder) !== JSON.stringify(images.map((_, i) => i))) {
-        payload.image_order = imageOrder;
+
+      if (
+        JSON.stringify(imageOrder) !==
+        JSON.stringify(images.map((_, i) => i))
+      ) {
+        payload.imageorder = imageOrder;
       }
+
       await itemsApi.editItem(itemId, payload);
       onSuccess();
     } catch (err) {
@@ -289,6 +352,21 @@ function EditItemModal({
       <div className={styles.modal}>
         <div className={styles.modalContent}>
           <div className={styles.loadingText}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className={styles.modal}>
+        <div className={styles.modalContent}>
+          <p className={styles.errorMessage}>Item not found.</p>
+          <div className={styles.modalButtons}>
+            <button onClick={onClose} className={styles.cancelButton}>
+              Close
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -334,8 +412,8 @@ function EditItemModal({
                   onDrop={() => {
                     if (draggedIndex !== null && draggedIndex !== newIndex) {
                       handleReorderImage(draggedIndex, newIndex);
+                      setDraggedIndex(null);
                     }
-                    setDraggedIndex(null);
                   }}
                   className={`${styles.draggableImage} ${
                     draggedIndex === newIndex ? styles.dragging : ''

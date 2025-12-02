@@ -120,7 +120,7 @@ spec:
               port: 8000
               httpHeaders:
                 - name: Host
-                  value: donney.ddns.net
+                  value: backend-svc
             initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
