@@ -9,9 +9,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        {/* server-rendered header, no flicker */}
+    <html lang="en" data-color-scheme="dark" suppressHydrationWarning>
+      <body className="min-h-screen antialiased bg-[var(--color-background)] text-[var(--color-text)]">
         <Header />
         {children}
       </body>

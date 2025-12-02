@@ -13,17 +13,16 @@ async function fetchItems(sp: SP) {
   const q = get(sp, 'q');
   const sort = get(sp, 'sort') || 'ending_soon';
 
-  // Only default to 'active' if the param is truly absent
   const rawStatus = get(sp, 'status');
-  const status = rawStatus === undefined ? 'active' : rawStatus; // '', 'active', or 'ended'
+  const status = rawStatus === undefined ? 'active' : rawStatus; // '', 'active', 'ended'
 
   const type = get(sp, 'type'); // '', 'FORWARD', 'DUTCH'
 
   const params = new URLSearchParams();
   params.set('sort', sort);
   if (q) params.set('q', q);
-  if (status) params.set('status', status); 
-  if (type) params.set('type', type);       
+  if (status) params.set('status', status);
+  if (type) params.set('type', type);
   params.set('page_size', '24');
 
   const res = await fetch(`${base}/items/?${params.toString()}`, { cache: 'no-store' });
@@ -49,27 +48,35 @@ export default async function HomePage({
   const data = await fetchItems(sp);
   const results: any[] = data?.results ?? [];
 
+  // Use distinct keys for siblings
+  const keyBase = `${sort}|${status}|${type}|${q}`;
+
   return (
     <main className="p-4 max-w-6xl mx-auto">
-      {/* Pure GET form */}
-      <form method="get" action="/" className="mb-4 flex flex-wrap items-center gap-3">
+      <form
+        key={`form:${keyBase}`}
+        method="get"
+        action="/"
+        className="mb-4 flex flex-wrap items-center gap-3"
+        autoComplete="off"
+      >
         {q && <input type="hidden" name="q" value={q} />}
 
         <label className="text-sm text-gray-600">Sort:</label>
-        <select name="sort" className="border rounded px-2 py-2" defaultValue={sort}>
+        <select name="sort" defaultValue={sort} className="border rounded px-2 py-2">
           <option value="ending_soon">Ending soon</option>
           <option value="newest">Newest</option>
           <option value="price_asc">Price: Lo → High</option>
           <option value="price_desc">Price: High → Low</option>
         </select>
 
-        <select name="type" className="border rounded px-2 py-2" defaultValue={type}>
+        <select name="type" defaultValue={type} className="border rounded px-2 py-2">
           <option value="">All types</option>
           <option value="FORWARD">Forward</option>
           <option value="DUTCH">Dutch</option>
         </select>
 
-        <select name="status" className="border rounded px-2 py-2" defaultValue={status}>
+        <select name="status" defaultValue={status} className="border rounded px-2 py-2">
           <option value="active">Active only</option>
           <option value="ended">Ended</option>
           <option value="">All</option>
@@ -78,15 +85,15 @@ export default async function HomePage({
         <button type="submit" className="border rounded px-3 py-2">Apply</button>
       </form>
 
-      {results.length === 0 ? (
-        <p>No results.</p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {results.map((item) => (
+      <div key={`grid:${keyBase}`} className="grid gap-6 md:grid-cols-3">
+        {results.length === 0 ? (
+          <div className="col-span-full text-sm text-gray-600">No results.</div>
+        ) : (
+          results.map((item) => (
             <ItemCard key={item.id} item={item} serverNow={data.serverNow} />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </main>
   );
 }
